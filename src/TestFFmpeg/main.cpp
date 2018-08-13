@@ -6,17 +6,24 @@ extern "C" {
 }
 
 // 2 ways to load external library
-// 1) use macro, like following code
+// 1) using macro, like following code.
 #pragma comment(lib, "avcodec.lib")
+
 // 2) specify the library name in VS project.
 // Property -> Linker -> Input -> Extra Dependencies, adds you need.
 
+
 int main(int argc, char* argv[])
 {
-#ifdef WIN32
-	std::cout << "32 bit program" << std::endl;
+// windows platform and non-windows platform macro definition.
+#ifdef _WIN32
+	#ifdef _WIN64
+        std::cout << "Platform: Windows X64 platform" << std::endl;
+	#else
+		std::cout << "Platform: Windows X86 plarform" << std::endl;
+	#endif
 #else
-	std::cout << "64 bit program" << std::endl;
+	std::cout << "Unknown platform" << std::endl;
 #endif
 
 	std::cout << avcodec_configuration() << std::endl;
