@@ -22,4 +22,3 @@ NOTE: Qt creator is a development tools for programming, configure qt environmen
 1. Enabling console output when developing UI program.  
 VS specific configuration：  
 Configuration Property -> Linker -> System -> Subsystem, choose '/SUBSYSTEM:CONSOLE'.  
-
