@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>XPlayerClass</class>
+ <widget class="QWidget" name="XPlayerClass">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>801</width>
+    <height>680</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>XPlayer</string>
+  </property>
+  <widget class="XVideoWidget" name="video">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>50</y>
+     <width>801</width>
+     <height>611</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="openFileBtn">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>10</y>
+     <width>91</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>open video</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="urlLineEdit">
+   <property name="geometry">
+    <rect>
+     <x>110</x>
+     <y>10</y>
+     <width>371</width>
+     <height>31</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="XSlider" name="slider">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>660</y>
+     <width>801</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="orientation">
+    <enum>Qt::Horizontal</enum>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="playBtn">
+   <property name="geometry">
+    <rect>
+     <x>490</x>
+     <y>10</y>
+     <width>61</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>play</string>
+   </property>
+  </widget>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>XVideoWidget</class>
+   <extends>QOpenGLWidget</extends>
+   <header location="global">XVideoWidget.h</header>
+  </customwidget>
+  <customwidget>
+   <class>XSlider</class>
+   <extends>QSlider</extends>
+   <header location="global">XSlider.h</header>
+  </customwidget>
+ </customwidgets>
+ <resources>
+  <include location="XPlayer.qrc"/>
+ </resources>
+ <connections>
+  <connection>
+   <sender>openFileBtn</sender>
+   <signal>clicked()</signal>
+   <receiver>XPlayerClass</receiver>
+   <slot>openFile()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>48</x>
+     <y>19</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>56</x>
+     <y>-49</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>urlLineEdit</sender>
+   <signal>returnPressed()</signal>
+   <receiver>XPlayerClass</receiver>
+   <slot>openUri()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>214</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>216</x>
+     <y>-25</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>playBtn</sender>
+   <signal>clicked()</signal>
+   <receiver>XPlayerClass</receiver>
+   <slot>playOrPause()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>526</x>
+     <y>19</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>516</x>
+     <y>-50</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>slider</sender>
+   <signal>sliderPressed()</signal>
+   <receiver>XPlayerClass</receiver>
+   <slot>sliderPressed()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>136</x>
+     <y>666</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>135</x>
+     <y>734</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>slider</sender>
+   <signal>sliderReleased()</signal>
+   <receiver>XPlayerClass</receiver>
+   <slot>sliderReleased()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>320</x>
+     <y>670</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>320</x>
+     <y>712</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>openFile()</slot>
+  <slot>openUri()</slot>
+  <slot>playOrPause()</slot>
+  <slot>sliderPressed()</slot>
+  <slot>sliderReleased()</slot>
+ </slots>
+</ui>
