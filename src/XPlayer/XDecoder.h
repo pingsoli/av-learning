@@ -32,6 +32,7 @@ public:
 
     // get current pts.
     int64_t getPts();
+    //void setPts(int64_t pts_);
 
 private:
     std::mutex mux; // protect AVCodecContext.

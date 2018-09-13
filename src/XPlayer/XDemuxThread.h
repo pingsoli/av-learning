@@ -40,7 +40,10 @@ public:
     // set flag, that will stop demuxing, video and audio thread will suspend.
     void setPause(bool isPause_);
 
+    // video file duration (ms precision).
     int64_t getTotalMs();
+
+    // get video or audio pts.
     int64_t getPts();
 
 protected:
@@ -52,7 +55,6 @@ protected:
 
     AVCodecParameters *audioParams = nullptr;
     AVCodecParameters *videoParams = nullptr;
-
     std::atomic<bool> isExit = false;
 
 private:

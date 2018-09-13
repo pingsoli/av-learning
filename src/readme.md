@@ -1,10 +1,12 @@
 ## Project Description
 
 ### Point Out
-Now, the `XPlayer` is maintained now, others are demos.
+`Xplayer` is a complete project, others are demos  
 
+---
 ### First try
 **helloworld** is first qt program. familiarize yourself with qt basics.  
+
 ---
 ### Mix VS with Qt
 Mix Visual Studio 2015 and qt creator to compile the whole project.  
@@ -67,6 +69,7 @@ avcodec_receive_frame
 NOTE: play the last frame, you must set the input packet is nullptr, and read until nothing.  
 2) video pixel format scaling.  
 3) audio resample.  
+
 ---
 ### Qt Basics for OpenGL
 1) OpenGL learning with Qt  
@@ -78,5 +81,6 @@ NOTE: play the last frame, you must set the input packet is nullptr, and read un
 create OpenGL project  
 read from yuv file and render on screen  
 
+---
 ### XPlayer
 a whole project, contains all content we have learnt.

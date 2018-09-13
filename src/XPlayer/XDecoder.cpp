@@ -106,6 +106,12 @@ int64_t XDecoder::getPts() {
     std::lock_guard<std::mutex> locker{mux};
     return pts;
 }
+//
+//void XDecoder::setPts(int64_t pts_)
+//{
+//    std::lock_guard<std::mutex> locker{mux};
+//    pts = pts_;
+//}
 
 void XDecoder::close()
 {

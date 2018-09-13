@@ -20,9 +20,9 @@ QIODevice and QAudioFormat are for playing sound.
 QOpenGLWidget is for rendering picture.  
 
 ---
-
 ### **Questions**
 **Synchronize video and audio stream ?**  
+frame queue and packet queue.  
 
 **How to keep fixed audio fps when playing local video file ?**  
 for example: 48 frame per second (48 fps).
@@ -71,6 +71,7 @@ int main(int argc, char **argv[]) {
 why would this happened ? how to avoid this ?  
 Have no idea.
 
+---
 ### Errors
 list all errors here.
 

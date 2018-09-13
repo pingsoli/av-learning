@@ -131,14 +131,14 @@ void XAudioThread::run()
             if (!frame) break;
 
             // subtract unplay buffer time(ms)
-            pts = decoder->getPts() - audioPlayer->getNoPlayMs();
-            //std::cout << "audio pts = " << pts << std::endl; // print pts.
+            //pts = decoder->getPts() - audioPlayer->getNoPlayMs();
+            std::cout << "audio pts: " << frame->pts << std::endl;
+            //pts = frame->pts;
 
             int size = audioResampler->resample(frame, pcm);
 
             //std::cout << "audio resample size: " << size << std::endl;
-            std::cout << "audio pts: " << frame->pts << std::endl;
-            pts = frame->pts;
+
 
             // IMPORTANT: free current audio frame, otherwise memory leaking.
             av_frame_free(&frame);

@@ -36,7 +36,7 @@ XPlayer::XPlayer(QWidget *parent)
     // set fixed size, though cannot change the window size, but you can also set full screen mode.
     setFixedSize(size());
 
-    // triggered every 40 ms, for progress bar displaying.
+    // triggered every 40 ms for progress bar displaying.
     startTimer(40);
 }
 

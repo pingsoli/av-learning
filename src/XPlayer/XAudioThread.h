@@ -36,7 +36,7 @@ public:
 private:
     XResampler *audioResampler = nullptr;
     XAudioPlayer *audioPlayer = nullptr;
-    int64_t pts = 0;
+    int64_t pts = 0; // audio current pts.
 
     std::mutex amux; // protect all members exclude inherited members.
 };

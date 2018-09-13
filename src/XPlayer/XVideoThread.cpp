@@ -104,7 +104,6 @@ void XVideoThread::setPts(int64_t pts_) {
     pts = pts_;
 }
 
-void XVideoThread::setPause(bool isPause_)
-{
+void XVideoThread::setPause(bool isPause_) {
     isPause = isPause_;
 }
