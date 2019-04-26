@@ -2,6 +2,9 @@
 bin/
 lib/
 include/
+build/
+
+.vscode/
 
 ##################### QT Ignored Files ###################
 # C++ objects and libs

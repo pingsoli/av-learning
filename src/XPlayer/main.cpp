@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
 
     std::string url("");
     //url = "cut.mp4"; // short video. (10 seconds)
-    url = "test.mp4"; // long video.
+    //url = "test.mp4"; // long video.
     //url = "rtsp://184.72.239.149/vod/mp4:BigBuckBunny_175k.mov"; // valid rtsp stream url without subtitle.
     //url = "rtmp://live.hkstv.hk.lxdns.com/live/hks"; // valid rtsp stream with subtitle.
     //url = "rtsp://example.com/test"; // invalid rtsp url used for testing timeout behavior.
