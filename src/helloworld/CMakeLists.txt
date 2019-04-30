@@ -12,11 +12,11 @@ set(MY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/../../bin")
 if("${CMAKE_GENERATOR}" MATCHES "(Win64|IA64)")
     # 64 bit
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${MY_OUTPUT_DIRECTORY}/win64")
-    set(QT_ROOT_PATH "D:\\Qt\\5.12.3\\msvc2017_64\\")
+    set(QT_ROOT_PATH "D:/Qt/5.12.3/msvc2017_64")
 else()
     # 32 bit
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${MY_OUTPUT_DIRECTORY}/win32")
-    set(QT_ROOT_PATH "D:\\Qt\\5.12.3\\msvc2017\\")
+    set(QT_ROOT_PATH "D:/Qt/5.12.3/msvc2017")
 endif()
 
 # Remove 'Debug' and 'Release' directory when building

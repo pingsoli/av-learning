@@ -17,15 +17,17 @@ set(SDL_INCLUDE_DIRECTORY "${MY_INCLUDE_PATH}/sdl2" )
 set(SDL_LIBRARY_PATH "${MY_LIBRARY_PATH}/sdl2")
 
 if("${CMAKE_GENERATOR}" MATCHES "(Win64|IA64)")
-    # 64 bit
+    # 64 bit environment
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${MY_OUTPUT_DIRECTORY}/win64")
     set(FFMPEG_LIBRARY_DIRECTORY "${FFMPEG_LIBRARY_PATH}/win64")
     set(SDL_LIBRARY_DIRECTORY "${SDL_LIBRARY_PATH}/win64")
+    set(QT_ROOT_PATH "D:/Qt/5.12.3/msvc2017_64")
 else()
-    # 32 bit
+    # 32 bit environment
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${MY_OUTPUT_DIRECTORY}/win32")
     set(FFMPEG_LIBRARY_DIRECTORY "${FFMPEG_LIBRARY_PATH}/win32")
     set(SDL_LIBRARY_DIRECTORY "${SDL_LIBRARY_PATH}/win32")
+    set(QT_ROOT_PATH "D:/Qt/5.12.3/msvc2017")
 endif()
 
 # Remove 'Debug' and 'Release' directory when building
@@ -77,4 +79,9 @@ set_property(
     VS_DEBUGGER_WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG}
 )
 
-add_executable(pcm_player pcm_player.cpp)
+add_executable(pcm_player_with_sdl pcm_player_with_sdl.cpp)
+
+set(CMAKE_PREFIX_PATH ${QT_ROOT_PATH})
+find_package(Qt5Core)
+add_executable(pcm_player_with_qt pcm_player_with_qt.cpp)
+qt5_use_modules(pcm_player_with_qt Core Widgets Multimedia)

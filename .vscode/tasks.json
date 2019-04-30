@@ -1,0 +1,28 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "MSVC Build",
+      "command": "msbuild.exe",
+      "args": [
+        "${fileDirname}\\build\\${fileBasenameNoExtension}.vcxproj"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "cmake",
+      "command": "cmake.exe",
+      "args": [
+        ".."
+      ],
+      "options": {
+        "cwd": "${fileDirname}/build"
+      },
+      "problemMatcher": []
+    }
+  ]
+}

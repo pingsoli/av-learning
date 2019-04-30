@@ -4,7 +4,7 @@ set(CMAKE_BUILD_TYPE Debug)
 
 if(MSVC)
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SAFESEH:NO")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SAFESEH:NO /SUBSYSTEM:CONSOLE")
 endif()
 
 set(MY_ROOT_PATH "${CMAKE_SOURCE_DIR}/../..")
@@ -43,6 +43,13 @@ link_directories(
   ${SDL_LIBRARY_DIRECTORY}
 )
 
-add_executable(player main.cpp)
-# target_include_directories(player ${FFMPEG_INCLUDE_DIRECTORY})
-# target_link_directories(player ${FFMPEG_LIBRARY_DIRECTORY})
+add_executable(main
+  main.cpp
+  MediaInfo.cpp
+  Decoder.cpp
+)
+set_property(
+    TARGET main
+    PROPERTY
+    VS_DEBUGGER_WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG}
+)
