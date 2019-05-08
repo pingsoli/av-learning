@@ -8,7 +8,9 @@ class MediaInfo;
 
 class Decoder {
 public:
-  Decoder(const MediaInfo&);
+  Decoder();
+  ~Decoder();
+  int Open(const MediaInfo&);
   AVCodecContext* GetVideoCodecContext() { return videoCodecCtx_; }
   AVCodecContext* GetAudioCodecContext() { return audioCodecCtx_; }
 

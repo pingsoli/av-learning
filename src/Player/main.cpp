@@ -2,6 +2,9 @@
 #include <thread>
 #include <atomic>
 #include <chrono>
+#include <unordered_map>
+#include <fstream>
+#include <ctime>
 
 #pragma comment(lib, "avformat.lib")
 #pragma comment(lib, "avcodec.lib")
@@ -12,15 +15,90 @@ extern "C" {
 #include "libavformat/avformat.h"
 #include "libavcodec/avcodec.h"
 #include "libavutil/avutil.h"
+#include "libavutil/opt.h"
+#include "libswresample/swresample.h"
+#include "libavutil/imgutils.h"
+#include "libavutil/error.h"
 }
 
 #include "MediaInfo.h"
 #include "Decoder.h"
 #include "Queue.h"
+#include "SDLAudioPlayer.h"
+#include "SDLVideoPlayer.h"
+#include "Resampler.h"
+
+#define SDL_MAIN_HANDLED
+#include "SDL.h"
+
+int SaveFrameToJPEG(const AVFrame* frame, const char* filename)
+{
+  char error_msg_buf[256] = { 0 };
+
+  AVCodec *jpegCodec = avcodec_find_decoder(AV_CODEC_ID_MJPEG);
+  if (!jpegCodec) return -1;
+  AVCodecContext *jpegCodecCtx = avcodec_alloc_context3(jpegCodec);
+  if (!jpegCodecCtx) return -2;
+
+  jpegCodecCtx->pix_fmt = AV_PIX_FMT_YUVJ420P; // NOTE: Don't use AV_PIX_FMT_YUV420P
+  jpegCodecCtx->width = frame->width;
+  jpegCodecCtx->height = frame->height;
+
+  jpegCodecCtx->time_base = { 1, 25 };
+  jpegCodecCtx->framerate = { 25, 1 };
+
+  int ret = avcodec_open2(jpegCodecCtx, jpegCodec, nullptr);
+  if (ret < 0) {
+    std::cerr << "avcodec open failed" << std::endl;
+    avcodec_free_context(&jpegCodecCtx);
+    return -3;
+  }
+
+  AVPacket pkt;
+  av_init_packet(&pkt);
+
+  ret = avcodec_send_frame(jpegCodecCtx, frame);
+  if (ret < 0) {
+    std::cerr << "Error: " <<
+      av_make_error_string(error_msg_buf, sizeof(error_msg_buf), ret) << std::endl;
+    avcodec_free_context(&jpegCodecCtx);
+    return -4;
+  }
+
+  while (ret >= 0) {
+    ret = avcodec_receive_packet(jpegCodecCtx, &pkt);
+    if (ret == AVERROR(EAGAIN)) continue;
+    if (ret == AVERROR_EOF) break;
+
+    std::ofstream outfile(filename, std::ios::binary);
+    outfile.write((char*) pkt.data, pkt.size);
+  }
+
+  avcodec_free_context(&jpegCodecCtx);
+  return 0;
+}
+
+void PrintCurrentTime()
+{
+  auto currentTime = std::chrono::system_clock::now();
+  static char buffer[80];
+
+  auto transformed = currentTime.time_since_epoch().count() / 1000000;
+  auto millis = transformed % 1000;
+  std::time_t tt;
+  tt = std::chrono::system_clock::to_time_t(currentTime);
+  strftime(buffer, sizeof(buffer), "%F %H:%M:%S", localtime(&tt));
+  printf("%s.%03d\n", buffer, (int) millis);
+}
 
 int main(int argc, char *argv[])
 {
   MediaInfo mediaInfo;
+  Decoder decoder;
+  SDLAudioPlayer audioPlayer;
+  Resampler resampler;
+  SDLVideoPlayer videoPlayer;
+
   Queue<AVPacket*> videoPktQueue;
   Queue<AVPacket*> audioPktQueue;
   //Queue<AVFrame> videoFrameQueue;
@@ -29,7 +107,16 @@ int main(int argc, char *argv[])
   std::atomic_bool isSilent = false;
 
   mediaInfo.Open("src.mp4");
-  Decoder decoder(mediaInfo);
+  decoder.Open(mediaInfo);
+
+  int channels = mediaInfo.GetAudioCodecParameters()->channels;
+  int sample_rate = mediaInfo.GetAudioCodecParameters()->sample_rate;
+  int sampleFormat = mediaInfo.GetAudioCodecParameters()->format;
+
+  resampler.Init(AV_CH_LAYOUT_STEREO, AV_SAMPLE_FMT_S16, sample_rate,
+                 AV_CH_LAYOUT_STEREO, (AVSampleFormat)sampleFormat, sample_rate);
+  audioPlayer.Init(sample_rate, "s16", channels);
+  videoPlayer.Init(mediaInfo.Filename(), mediaInfo.Width(), mediaInfo.Height());
 
   std::thread decodeThread(
     [&mediaInfo, &audioPktQueue, &isPlaying, &videoPktQueue] {
@@ -50,39 +137,47 @@ int main(int argc, char *argv[])
         } else {
           std::cerr << "Warning: decoding a packet from unknown stream" << std::endl;
         }
-
         av_packet_unref(&pkt);
       }
     }
   );
 
   std::thread audioThread(
-    [&audioPktQueue, &isPlaying, &isSilent, &decoder] {
-      AVFrame* frame = av_frame_alloc();
-      int count  = 0;
+    [&audioPktQueue, &isPlaying, &isSilent, &decoder, &audioPlayer, &resampler, &mediaInfo] {
+    AVFrame* frame = av_frame_alloc();
+    int count = 0;
 
-      while (isPlaying && !isSilent) {
-        AVPacket *pkt = audioPktQueue.Pop();
-        int ret = avcodec_send_packet(decoder.GetAudioCodecContext(), pkt);
-        av_packet_free(&pkt);
+    // std::ofstream outfile("test.dat", std::ofstream::binary | std::ofstream::app);
+    uint8_t *pcm = new uint8_t[8192];
 
-        if (ret != 0) {
-          char error_msg_buf[256] = { 0 };
-          av_strerror(ret, error_msg_buf, sizeof(error_msg_buf));
-          std::cerr << "Error: send packet to audio decoder failed: " << error_msg_buf << std::endl;
-          continue;
-        }
+    audioPlayer.Play();
+    while (isPlaying && !isSilent)
+    {
+      AVPacket *pkt = audioPktQueue.Pop();
+      int ret = avcodec_send_packet(decoder.GetAudioCodecContext(), pkt);
+      av_packet_free(&pkt);
 
-        while ((ret = avcodec_receive_frame(decoder.GetAudioCodecContext(), frame)) == 0) {
-          std::cout
-            << ++count << " | " << frame->pts << std::endl;
-        }
+      if (ret != 0) {
+        char error_msg_buf[256] = { 0 };
+        av_strerror(ret, error_msg_buf, sizeof(error_msg_buf));
+        std::cerr << "Error: send packet to audio decoder failed: " << error_msg_buf << std::endl;
+        continue;
+      }
+
+      while ((ret = avcodec_receive_frame(decoder.GetAudioCodecContext(), frame)) == 0)
+      {
+        int ret = resampler.Convert(pcm, frame);
+        int dst_linesize = 0;
+        int dst_bufsize = av_samples_get_buffer_size(&dst_linesize,
+          2, ret, AV_SAMPLE_FMT_S16, 0);
+        // PrintCurrentTime();
+        audioPlayer.Queue(pcm, dst_bufsize);
       }
     }
-  );
+  });
 
   std::thread videoThread(
-    [&isPlaying, &decoder, &videoPktQueue] {
+    [&isPlaying, &decoder, &videoPktQueue, &videoPlayer] {
       AVFrame* frame = av_frame_alloc();
 
       int count = 0;
@@ -93,13 +188,34 @@ int main(int argc, char *argv[])
         if (ret < 0) break;
 
         while ((ret = avcodec_receive_frame(decoder.GetVideoCodecContext(), frame)) == 0) {
-          std::cout
-            << ++count << " | " << frame->pts << std::endl;
-          //if (count == 100) exit(0);
+          videoPlayer.Render(frame);
+          std::this_thread::sleep_for(std::chrono::milliseconds(33));
+
+          if (frame->key_frame) {
+            static char filename[256] = { 0 };
+            sprintf(filename, "test-%06d.jpg", count++);
+            SaveFrameToJPEG(frame, filename);
+          }
         }
       }
     }
   );
+
+  SDL_Event event;
+  while (true) {
+    while (SDL_PollEvent(&event)) {
+      switch(event.type) {
+        case SDL_KEYDOWN:
+          std::cout << "Key down" << std::endl;
+          break;
+        case SDL_MOUSEMOTION:
+          std::cout << "Mouse motion" << std::endl;
+          break;
+        default:
+          std::cout << "Unknown event" << std::endl;
+      }
+    }
+  }
 
   decodeThread.join();
   audioThread.join();

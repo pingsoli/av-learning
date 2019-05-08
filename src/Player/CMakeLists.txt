@@ -47,6 +47,9 @@ add_executable(main
   main.cpp
   MediaInfo.cpp
   Decoder.cpp
+  SDLAudioPlayer.cpp
+  Resampler.cpp
+  SDLVideoPlayer.cpp
 )
 set_property(
     TARGET main

@@ -16,6 +16,9 @@ public:
   AVCodecParameters *GetAudioCodecParameters() const;
   int VideoStreamIndex() { return videoStreamIdx_; }
   int AudioStreamIndex() { return audioStreamIdx_; }
+  int Width() const { return width_; }
+  int Height() const { return height_; }
+  std::string Filename() const { return filename_; }
 
 private:
   std::string filename_;

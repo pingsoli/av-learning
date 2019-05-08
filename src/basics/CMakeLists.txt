@@ -34,28 +34,6 @@ endif()
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 
-add_executable(simplest_yuv420p_split simplest_yuv420p_split.c)
-add_executable(simplest_yuv444p_split simplest_yuv444p_split.c)
-add_executable(simplest_yuv420p_gray simplest_yuv420p_gray.c)
-add_executable(simplest_yuv420p_y_half simplest_yuv420p_y_half.c)
-add_executable(simplest_yuv420p_border simplest_yuv420p_border.c)
-
-add_executable(h264_parser h264_parser.cpp)
-add_executable(rtsp_over_tcp_h264 rtsp_over_tcp_h264.cpp)
-if (WIN32)
-    target_link_libraries(rtsp_over_tcp_h264 ws2_32)
-endif (WIN32)
-
-add_executable(aac_parser aac_parser.cpp)
-
-add_executable(flv_parser flv_parser.cpp)
-if (WIN32)
-    target_link_libraries(flv_parser ws2_32)
-endif (WIN32)
-
-add_executable(rtp_ts_parser rtp_ts_parser.cpp)
-add_executable(mp3_parser mp3_parser.cpp)
-
 include_directories(
     ${SDL_INCLUDE_DIRECTORY}
 )
@@ -64,24 +42,28 @@ link_directories(
     ${SDL_LIBRARY_DIRECTORY}
 )
 
-add_executable(wav_player wav_player.cpp)
-# target_link_directories(wav_player
-#     PRIVATE
-#     ${SDL_LIBRARY_DIRECTORY}
-# )
-# target_include_directories(wav_player
-#     PRIVATE
-#     ${SDL_INCLUDE_DIRECTORY}
-# )
+file(GLOB src_files
+    "*.c"
+    "*.cpp")
+
+foreach(file ${src_files})
+    get_filename_component(filename ${file} NAME)
+    get_filename_component(target_name ${file} NAME_WE)
+    add_executable(${target_name} ${filename})
+endforeach()
+
 set_property(
     TARGET wav_player
     PROPERTY
     VS_DEBUGGER_WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG}
 )
 
-add_executable(pcm_player_with_sdl pcm_player_with_sdl.cpp)
-
 set(CMAKE_PREFIX_PATH ${QT_ROOT_PATH})
 find_package(Qt5Core)
-add_executable(pcm_player_with_qt pcm_player_with_qt.cpp)
 qt5_use_modules(pcm_player_with_qt Core Widgets Multimedia)
+
+# target_sources(
+#     wav_player
+#     PRIVATE
+#     helloworld.cpp
+# )

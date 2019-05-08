@@ -7,6 +7,7 @@
 
 #if defined(_WIN32) || defined(_WIN64)
 #include <winsock.h>
+#pragma comment(lib, "ws2_32.lib")
 #elif __linux__
 #include <arpa/inet.h>
 #endif

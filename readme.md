@@ -7,8 +7,12 @@ the project directory
 |   |-- win64
 |-- include        the directory contains ffmpeg header files.
 |   |-- ffmpeg
+|   |-- sdl2
 |-- lib
 |   |-- ffmpeg
+|   |   |-- win32
+|   |   |-- win64
+|   |-- sdl2
 |   |   |-- win32
 |   |   |-- win64
 |-- src            all codes(projects) are here.
