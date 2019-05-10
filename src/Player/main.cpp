@@ -10,6 +10,7 @@
 #pragma comment(lib, "avcodec.lib")
 #pragma comment(lib, "avutil.lib")
 #pragma comment(lib, "swresample.lib") // audio resample
+#pragma comment(lib, "swscale.lib")
 
 extern "C" {
 #include "libavformat/avformat.h"
@@ -19,6 +20,7 @@ extern "C" {
 #include "libswresample/swresample.h"
 #include "libavutil/imgutils.h"
 #include "libavutil/error.h"
+#include "libswscale/swscale.h"
 }
 
 #include "MediaInfo.h"
@@ -31,38 +33,62 @@ extern "C" {
 #define SDL_MAIN_HANDLED
 #include "SDL.h"
 
-int SaveFrameToJPEG(const AVFrame* frame, const char* filename)
+int SaveFrameToJPEG(const AVFrame* frame, const char* filename, float ratio)
 {
   char error_msg_buf[256] = { 0 };
 
-  AVCodec *jpegCodec = avcodec_find_decoder(AV_CODEC_ID_MJPEG);
+  AVFrame *outFrame = av_frame_alloc();
+  int dstWidth = static_cast<int>(frame->width * ratio);
+  int dstHeight = static_cast<int>(frame->height * ratio);
+
+  // NOTE: the outFrame data buffer must be aligned.
+  av_image_alloc(outFrame->data, outFrame->linesize, dstWidth, dstHeight, (AVPixelFormat)frame->format, 1);
+  outFrame->width = dstWidth;
+  outFrame->height = dstHeight;
+  outFrame->format = frame->format;
+
+  SwsContext* swsContext = sws_getContext(
+    frame->width, frame->height, (AVPixelFormat) frame->format,
+    outFrame->width, outFrame->height, (AVPixelFormat) outFrame->format,
+    SWS_BICUBIC, nullptr, nullptr, nullptr);
+
+  //auto scale_parallel = [&swsContext, &frame, &copyFrame](int height) {
+  //  sws_scale(swsContext, frame->data, frame->linesize, 0, height, copyFrame->data, copyFrame->linesize);
+  //};
+  //std::thread t1(scale_parallel, frame->height / 2);
+  //std::thread t2(scale_parallel, frame->height);
+
+  int dh = sws_scale(swsContext, frame->data, frame->linesize, 0, frame->height, outFrame->data, outFrame->linesize);
+  //std::cout << "dh = " << dh << std::endl;
+  //sws_scale(swsContext, frame->data, frame->linesize, dh, frame->height / 2, copyFrame->data, copyFrame->linesize);
+
+  AVCodec *jpegCodec = avcodec_find_encoder(AV_CODEC_ID_MJPEG);
   if (!jpegCodec) return -1;
   AVCodecContext *jpegCodecCtx = avcodec_alloc_context3(jpegCodec);
   if (!jpegCodecCtx) return -2;
 
   jpegCodecCtx->pix_fmt = AV_PIX_FMT_YUVJ420P; // NOTE: Don't use AV_PIX_FMT_YUV420P
-  jpegCodecCtx->width = frame->width;
-  jpegCodecCtx->height = frame->height;
-
+  jpegCodecCtx->width = dstWidth;
+  jpegCodecCtx->height = dstHeight;
   jpegCodecCtx->time_base = { 1, 25 };
   jpegCodecCtx->framerate = { 25, 1 };
 
   int ret = avcodec_open2(jpegCodecCtx, jpegCodec, nullptr);
   if (ret < 0) {
     std::cerr << "avcodec open failed" << std::endl;
-    avcodec_free_context(&jpegCodecCtx);
-    return -3;
+    ret = -3;
+    goto cleanup;
   }
 
   AVPacket pkt;
   av_init_packet(&pkt);
 
-  ret = avcodec_send_frame(jpegCodecCtx, frame);
+  ret = avcodec_send_frame(jpegCodecCtx, outFrame);
   if (ret < 0) {
     std::cerr << "Error: " <<
       av_make_error_string(error_msg_buf, sizeof(error_msg_buf), ret) << std::endl;
-    avcodec_free_context(&jpegCodecCtx);
-    return -4;
+    ret = -4;
+    goto cleanup;
   }
 
   while (ret >= 0) {
@@ -74,8 +100,11 @@ int SaveFrameToJPEG(const AVFrame* frame, const char* filename)
     outfile.write((char*) pkt.data, pkt.size);
   }
 
+cleanup:
+  av_frame_free(&outFrame);
   avcodec_free_context(&jpegCodecCtx);
-  return 0;
+  sws_freeContext(swsContext);
+  return ret;
 }
 
 void PrintCurrentTime()
@@ -194,7 +223,8 @@ int main(int argc, char *argv[])
           if (frame->key_frame) {
             static char filename[256] = { 0 };
             sprintf(filename, "test-%06d.jpg", count++);
-            SaveFrameToJPEG(frame, filename);
+            SaveFrameToJPEG(frame, filename, 1);
+            exit(0);
           }
         }
       }

@@ -13,12 +13,7 @@ public:
   Queue(std::size_t max_size = 20)
     : max_size_(max_size)
   {}
-  ~Queue() {}
-
-  Queue(const Queue&) = delete;
-  Queue(Queue&&) = delete;
-  Queue& operator=(const Queue&) = delete;
-  Queue& operator=(Queue&&) = delete;
+  ~Queue() {} 
 
   void Push(T t) {
     std::unique_lock<std::mutex> lock(mutex_);
