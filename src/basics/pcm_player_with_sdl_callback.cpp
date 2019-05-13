@@ -80,7 +80,7 @@ int main(int argc, char* argv[])
   wanted_spec.callback = audio_callback;
   wanted_spec.userdata = &queue;
 
-  const char filename[] = "G:/av-learning/bin/win32/test.pcm";
+  const char filename[] = "F:/av-learning/bin/win32/test.pcm";
   std::ifstream infile(filename, std::ios::binary);
 
   SDL_AudioDeviceID deviceId = SDL_OpenAudioDevice(nullptr, 0, &wanted_spec, &obtained_spec, 1);
@@ -91,7 +91,7 @@ int main(int argc, char* argv[])
 
   SDL_PauseAudioDevice(deviceId, 0); // Start to play
 
-  const int buffer_size = 4096;
+  const int buffer_size = 13107;
   frame_type frame;
   frame.reserve(buffer_size);
   std::fill(frame.begin(), frame.end(), 0);

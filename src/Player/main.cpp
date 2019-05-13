@@ -32,6 +32,7 @@ extern "C" {
 
 #define SDL_MAIN_HANDLED
 #include "SDL.h"
+#pragma comment(lib, "SDL2.lib")
 
 int SaveFrameToJPEG(const AVFrame* frame, const char* filename, float ratio)
 {
@@ -56,11 +57,9 @@ int SaveFrameToJPEG(const AVFrame* frame, const char* filename, float ratio)
   //  sws_scale(swsContext, frame->data, frame->linesize, 0, height, copyFrame->data, copyFrame->linesize);
   //};
   //std::thread t1(scale_parallel, frame->height / 2);
-  //std::thread t2(scale_parallel, frame->height);
+  //std::thread t2(scale_parallel, frame->height);s
 
   int dh = sws_scale(swsContext, frame->data, frame->linesize, 0, frame->height, outFrame->data, outFrame->linesize);
-  //std::cout << "dh = " << dh << std::endl;
-  //sws_scale(swsContext, frame->data, frame->linesize, dh, frame->height / 2, copyFrame->data, copyFrame->linesize);
 
   AVCodec *jpegCodec = avcodec_find_encoder(AV_CODEC_ID_MJPEG);
   if (!jpegCodec) return -1;

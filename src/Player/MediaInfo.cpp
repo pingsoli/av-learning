@@ -34,7 +34,7 @@ bool MediaInfo::Open(const std::string& filename)
     return false;
   }
 
-   for (unsigned int i = 0; i < avFormatCtx_->nb_streams; ++i)
+  for (std::size_t i = 0; i < avFormatCtx_->nb_streams; ++i)
   {
     switch (avFormatCtx_->streams[i]->codecpar->codec_type)
     {
