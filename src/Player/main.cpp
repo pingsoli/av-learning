@@ -37,6 +37,7 @@ extern "C" {
 int SaveFrameToJPEG(const AVFrame* frame, const char* filename, float ratio)
 {
   char error_msg_buf[256] = { 0 };
+  ratio = 1.2f;
 
   AVFrame *outFrame = av_frame_alloc();
   int dstWidth = static_cast<int>(frame->width * ratio);
@@ -48,20 +49,17 @@ int SaveFrameToJPEG(const AVFrame* frame, const char* filename, float ratio)
   outFrame->height = dstHeight;
   outFrame->format = frame->format;
 
-  //SwsContext* swsContext = sws_getContext(
-  //  frame->width, frame->height, (AVPixelFormat) frame->format,
-  //  outFrame->width, outFrame->height, (AVPixelFormat) outFrame->format,
-  //  SWS_BICUBIC, nullptr, nullptr, nullptr);
+  SwsContext* swsContext = sws_getContext(
+   frame->width, frame->height, (AVPixelFormat) frame->format,
+   outFrame->width, outFrame->height, (AVPixelFormat) outFrame->format,
+   SWS_BICUBIC, nullptr, nullptr, nullptr);
 
-  //auto scale_parallel = [&swsContext, &frame, &copyFrame](int height) {
-  //  sws_scale(swsContext, frame->data, frame->linesize, 0, height, copyFrame->data, copyFrame->linesize);
-  //};
-  //std::thread t1(scale_parallel, frame->height / 2);
-  //std::thread t2(scale_parallel, frame->height);
+  // Copy top-half picture to bottom-half position
+  // sws_scale(swsContext, frame->data, frame->linesize,   0, frame->height / 2, outFrame->data, outFrame->linesize);
+  // sws_scale(swsContext, frame->data, frame->linesize, frame->height / 2, frame->height / 2, outFrame->data, outFrame->linesize);
 
-  //int dh = sws_scale(swsContext, frame->data, frame->linesize, 0, frame->height, outFrame->data, outFrame->linesize);
-  //std::cout << "dh = " << dh << std::endl;
-  //sws_scale(swsContext, frame->data, frame->linesize, dh, frame->height / 2, copyFrame->data, copyFrame->linesize);
+  // Copy whole picture to destination picture we want.
+  sws_scale(swsContext, frame->data, frame->linesize, 0, frame->height, outFrame->data, outFrame->linesize);
 
   AVCodec *jpegCodec = avcodec_find_encoder(AV_CODEC_ID_MJPEG);
   if (!jpegCodec) return -1;

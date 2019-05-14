@@ -20,3 +20,13 @@ Qt creator contains Qt designer and other stuff, using them to develop faster.
 1. Enabling console output when developing UI program.  
 VS specific configuration：  
 Configuration Property -> Linker -> System -> Subsystem, choose '/SUBSYSTEM:CONSOLE'.  
+
+
+### libyuv installation
+link: https://chromium.googlesource.com/libyuv/libyuv/+/refs/heads/master
+
+#### Build under MSVC
+```
+cmake -DCMAKE_BUILD_TYPE="Release" ..
+cmake --build . --config Release
+```

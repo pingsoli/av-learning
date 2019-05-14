@@ -108,16 +108,18 @@ AVFrame* CropFrame(const AVFrame* src, int x, int y, int w, int h)
 
   frame = av_frame_clone(src);
   ret = av_buffersrc_add_frame(srcFilterCtx, frame);
-  if (ret < 0) goto cleanup;
+  if (ret < 0) {
+    av_frame_free(&frame);
+    goto cleanup;
+  }
   ret = av_buffersink_get_frame(sinkFilterCtx, frame);
-  if (ret < 0) goto cleanup;
+  if (ret < 0) {
+    av_frame_free(&frame);
+    goto cleanup;
+  }
 
 cleanup:
   avfilter_graph_free(&avFilterGraph);
-  if (ret < 0) {
-    av_frame_free(&frame);
-    frame = nullptr;
-  }
   return frame;
 }
 

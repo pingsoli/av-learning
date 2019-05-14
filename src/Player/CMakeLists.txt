@@ -5,6 +5,7 @@ set(CMAKE_BUILD_TYPE Debug)
 if(MSVC)
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SAFESEH:NO /SUBSYSTEM:CONSOLE")
+    add_compile_options(/wd4819) # disable warning C4819 under MSVC
 endif()
 
 set(MY_ROOT_PATH "${CMAKE_SOURCE_DIR}/../..")
