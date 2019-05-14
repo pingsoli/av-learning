@@ -1,4 +1,10 @@
+#include <iostream>
+
 #include "utils.h"
+
+#define USE_LIBYUV
+
+#if !defined(USE_LIBYUV)
 
 extern "C" {
 #include "libavformat/avformat.h"
@@ -10,22 +16,28 @@ extern "C" {
 #pragma comment(lib, "avutil.lib")
 #pragma comment(lib, "swscale.lib")
 
+#elif defined(USE_LIBYUV)
+
+extern "C" {
+#include "libyuv.h"
+#pragma comment(lib, "yuv.lib")
+}
+
+#endif
+
 int main(int argc, char *argv[])
 {
   AVFrame *frame = GetFrameFromYUVFile(
-    "G:/av-learning/bin/win32/test_1280x720_yuv420p.yuv",
-    1280, 720, AV_PIX_FMT_YUV420P
+    "F:/av-learning/bin/win32/thor_640x360_yuv420p.yuv",
+    640, 360, AV_PIX_FMT_YUV420P
   );
 
   int dstWidth = static_cast<int>(frame->width * 1);
   int dstHeight = static_cast<int>(frame->height * 0.5);
 
-  AVFrame *outFrame = av_frame_alloc();
-  outFrame->width = dstWidth;
-  outFrame->height = dstHeight;
-  outFrame->format = frame->format;
-  av_frame_get_buffer(outFrame, 1);
+  AVFrame *outFrame = AVFrameMalloc(dstWidth, dstHeight, frame->format);
 
+#if !defined(USE_LIBYUV)
   SwsContext* swsContext = sws_getContext(
    frame->width, frame->height, (AVPixelFormat) frame->format,
    outFrame->width, outFrame->height, (AVPixelFormat) outFrame->format,
@@ -37,13 +49,26 @@ int main(int argc, char *argv[])
 
   // Copy whole picture to destination picture we want.
   sws_scale(swsContext, frame->data, frame->linesize, 0, frame->height, outFrame->data, outFrame->linesize);
+  sws_freeContext(swsContext);
+#elif defined(USE_LIBYUV)
+  libyuv::I420Scale(
+    frame->data[0], frame->linesize[0],
+    frame->data[1], frame->linesize[1],
+    frame->data[2], frame->linesize[2],
+    frame->width, frame->height,
+    outFrame->data[0], outFrame->linesize[0],
+    outFrame->data[1], outFrame->linesize[1],
+    outFrame->data[2], outFrame->linesize[2],
+    outFrame->width, outFrame->height, libyuv::kFilterNone);
+#endif
 
   char outFilename[256] = { 0 };
   snprintf(outFilename, sizeof(outFilename), "test-output-%dx%d.yuv", outFrame->width, outFrame->height);
   SaveI420P(outFilename, outFrame);
+  SaveFrameToJPEG("test-output.jpeg", outFrame);
 
   av_frame_free(&frame);
   av_frame_free(&outFrame);
-  sws_freeContext(swsContext);
+
   return 0;
 }

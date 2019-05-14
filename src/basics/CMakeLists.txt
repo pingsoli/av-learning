@@ -1,12 +1,12 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.10)
 
 set(CMAKE_BUILD_TYPE Debug)
 if(MSVC)
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
     set(CMAKE_EXE_LINKER_FLAGS
-        "${CMAKE_EXE_LINKER_FLAGS} 
-        /SAFESEH:NO 
-        /SUBSYSTEM:CONSOLE 
+        "${CMAKE_EXE_LINKER_FLAGS} \
+        /SAFESEH:NO \
+        /SUBSYSTEM:CONSOLE \
         /NODEFAULTLIB:library")
     add_compile_options(/wd4819) # disable warning C4819 under MSVC
 endif()
@@ -65,13 +65,12 @@ foreach(file ${src_files})
     get_filename_component(filename ${file} NAME)
     get_filename_component(target_name ${file} NAME_WE)
     add_executable(${target_name} ${filename})
+    set_property(
+        TARGET ${target_name}
+        PROPERTY
+        VS_DEBUGGER_WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG}
+    )
 endforeach()
-
-set_property(
-    TARGET wav_player
-    PROPERTY
-    VS_DEBUGGER_WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG}
-)
 
 set(CMAKE_PREFIX_PATH ${QT_ROOT_PATH})
 find_package(Qt5Core)

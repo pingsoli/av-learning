@@ -37,7 +37,6 @@ extern "C" {
 int SaveFrameToJPEG(const AVFrame* frame, const char* filename, float ratio)
 {
   char error_msg_buf[256] = { 0 };
-  ratio = 1.2f;
 
   AVFrame *outFrame = av_frame_alloc();
   int dstWidth = static_cast<int>(frame->width * ratio);
@@ -223,7 +222,6 @@ int main(int argc, char *argv[])
             static char filename[256] = { 0 };
             sprintf(filename, "test-%06d.jpg", count++);
             SaveFrameToJPEG(frame, filename, 1);
-            exit(0);
           }
         }
       }
