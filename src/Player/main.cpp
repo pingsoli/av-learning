@@ -48,18 +48,20 @@ int SaveFrameToJPEG(const AVFrame* frame, const char* filename, float ratio)
   outFrame->height = dstHeight;
   outFrame->format = frame->format;
 
-  SwsContext* swsContext = sws_getContext(
-    frame->width, frame->height, (AVPixelFormat) frame->format,
-    outFrame->width, outFrame->height, (AVPixelFormat) outFrame->format,
-    SWS_BICUBIC, nullptr, nullptr, nullptr);
+  //SwsContext* swsContext = sws_getContext(
+  //  frame->width, frame->height, (AVPixelFormat) frame->format,
+  //  outFrame->width, outFrame->height, (AVPixelFormat) outFrame->format,
+  //  SWS_BICUBIC, nullptr, nullptr, nullptr);
 
   //auto scale_parallel = [&swsContext, &frame, &copyFrame](int height) {
   //  sws_scale(swsContext, frame->data, frame->linesize, 0, height, copyFrame->data, copyFrame->linesize);
   //};
   //std::thread t1(scale_parallel, frame->height / 2);
-  //std::thread t2(scale_parallel, frame->height);s
+  //std::thread t2(scale_parallel, frame->height);
 
-  int dh = sws_scale(swsContext, frame->data, frame->linesize, 0, frame->height, outFrame->data, outFrame->linesize);
+  //int dh = sws_scale(swsContext, frame->data, frame->linesize, 0, frame->height, outFrame->data, outFrame->linesize);
+  //std::cout << "dh = " << dh << std::endl;
+  //sws_scale(swsContext, frame->data, frame->linesize, dh, frame->height / 2, copyFrame->data, copyFrame->linesize);
 
   AVCodec *jpegCodec = avcodec_find_encoder(AV_CODEC_ID_MJPEG);
   if (!jpegCodec) return -1;
@@ -102,7 +104,7 @@ int SaveFrameToJPEG(const AVFrame* frame, const char* filename, float ratio)
 cleanup:
   av_frame_free(&outFrame);
   avcodec_free_context(&jpegCodecCtx);
-  sws_freeContext(swsContext);
+  //sws_freeContext(swsContext);
   return ret;
 }
 
