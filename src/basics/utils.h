@@ -110,6 +110,49 @@ int SaveFrameToJPEG(const std::string& filename, const AVFrame* frame)
   return 0;
 }
 
+AVFrame* GetFrameFromPicture(const std::string& filename)
+{
+  int ret_code = 0;
+  AVFormatContext *avFormatCtx = nullptr;
+  if ((ret_code = avformat_open_input(&avFormatCtx, filename.c_str(), nullptr, nullptr)) != 0) {
+    char error_msg_buf[256] = {0};
+    av_strerror(ret_code, error_msg_buf, sizeof(error_msg_buf));
+    std::cerr << "Error: avformat_open_input failed: " << error_msg_buf << std::endl;
+    return false;
+  }
+
+  avformat_find_stream_info(avFormatCtx, nullptr);
+
+  AVCodec *codec = nullptr;
+  int videoStreamIdx = -1;
+  videoStreamIdx = av_find_best_stream(avFormatCtx, AVMEDIA_TYPE_VIDEO, -1, -1, &codec, 0);
+  if (videoStreamIdx < 0) goto cleanup_and_return;
+
+  AVCodecContext *avCodecCtx = avcodec_alloc_context3(codec);
+
+  ret_code = avcodec_open2(avCodecCtx, codec, nullptr);
+  if (ret_code < 0) goto cleanup_and_return;
+
+
+  AVPacket pkt;
+  av_init_packet(&pkt);
+  pkt.data = nullptr;
+  pkt.size = 0;
+  ret_code = av_read_frame(avFormatCtx, &pkt);
+  if (ret_code < 0) goto cleanup_and_return;
+  ret_code = avcodec_send_packet(avCodecCtx, &pkt);
+  if (ret_code < 0) goto cleanup_and_return;
+
+  AVFrame* frame = av_frame_alloc();
+  ret_code = avcodec_receive_frame(avCodecCtx, frame);
+  if (ret_code < 0) av_frame_free(&frame);
+
+cleanup_and_return:
+  if (avFormatCtx) avformat_close_input(&avFormatCtx);
+  if (avCodecCtx) avcodec_free_context(&avCodecCtx);
+  return frame;
+}
+
 AVFrame* AVFrameMalloc(int width, int height, int format)
 {
   AVFrame *frame = av_frame_alloc();

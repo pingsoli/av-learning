@@ -26,13 +26,18 @@ void Resampler::Init(int64_t out_ch_layout, int out_sample_format, int out_sampl
       in_ch_layout,  (AVSampleFormat)in_sample_format,  in_sample_rate,
       0, nullptr);
     swr_init(swr_);
+
+    target_chanel_layout_ = out_ch_layout;
+    target_sample_format_ = out_sample_format;
+    target_sample_rate_ = out_sample_rate;
 }
 
-int Resampler::Convert(uint8_t *out_pcm, AVFrame* frame)
+int Resampler::Convert(AVFrame* outFrame, const AVFrame* frame)
 {
-  AVFrame outFrame;
-  outFrame.data[0] = out_pcm;
-  outFrame.data[1] = nullptr;
-  return swr_convert(swr_, outFrame.data, frame->nb_samples,
+  outFrame->format = target_sample_format_;
+  outFrame->channel_layout = target_chanel_layout_;
+  outFrame->sample_rate = target_sample_rate_;
+
+  return swr_convert(swr_, outFrame->data, frame->nb_samples,
            (const uint8_t**) frame->data, frame->nb_samples);
 }

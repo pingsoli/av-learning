@@ -7,8 +7,7 @@ if(MSVC)
         "${CMAKE_EXE_LINKER_FLAGS} \
         /SAFESEH:NO \
         /SUBSYSTEM:CONSOLE \
-        /NODEFAULTLIB:library \
-        /sdl-")
+        /NODEFAULTLIB:library")
     add_compile_options(/wd4819) # disable warning C4819 under MSVC
 endif()
 
@@ -31,15 +30,11 @@ if("${CMAKE_GENERATOR}" MATCHES "(Win64|IA64)")
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${MY_OUTPUT_DIRECTORY}/win64")
     set(FFMPEG_LIBRARY_DIRECTORY "${FFMPEG_LIBRARY_PATH}/win64")
     set(SDL_LIBRARY_DIRECTORY "${SDL_LIBRARY_PATH}/win64")
-    set(LIBYUV_LIBRARY_DIRECTORY "${LIBYUV_LIBRARY_PATH}/win64")
-    set(QT_ROOT_PATH "D:/Qt/5.12.3/msvc2017_64")
 else()
     # 32 bit environment
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${MY_OUTPUT_DIRECTORY}/win32")
     set(FFMPEG_LIBRARY_DIRECTORY "${FFMPEG_LIBRARY_PATH}/win32")
     set(SDL_LIBRARY_DIRECTORY "${SDL_LIBRARY_PATH}/win32")
-    set(LIBYUV_LIBRARY_DIRECTORY "${LIBYUV_LIBRARY_PATH}/win32")
-    set(QT_ROOT_PATH "D:/Qt/5.12.3/msvc2017")
 endif()
 
 # Remove 'Debug' and 'Release' directory when building
@@ -49,36 +44,17 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 include_directories(
     ${FFMPEG_INCLUDE_DIRECTORY}
     ${SDL_INCLUDE_DIRECTORY}
-    ${LIBYUV_INCLUDE_DIRECTORY}
 )
 
 link_directories(
     ${FFMPEG_LIBRARY_DIRECTORY}
     ${SDL_LIBRARY_DIRECTORY}
-    ${LIBYUV_LIBRARY_DIRECTORY}
 )
 
-file(GLOB src_files
-    "*.c"
-    "*.cpp")
+add_executable(ffplay ffplay.c cmdutils.c)
 
-foreach(file ${src_files})
-    get_filename_component(filename ${file} NAME)
-    get_filename_component(target_name ${file} NAME_WE)
-    add_executable(${target_name} ${filename})
-    set_property(
-        TARGET ${target_name}
-        PROPERTY
-        VS_DEBUGGER_WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG}
-    )
-endforeach()
-
-set(CMAKE_PREFIX_PATH ${QT_ROOT_PATH})
-find_package(Qt5Core)
-qt5_use_modules(pcm_player_with_qt Core Widgets Multimedia)
-
-# target_sources(
-#     wav_player
-#     PRIVATE
-#     helloworld.cpp
-# )
+target_link_libraries(
+    ffplay
+    avformat avcodec avfilter avutil swresample swscale
+    SDL2
+)

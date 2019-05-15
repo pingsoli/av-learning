@@ -4,98 +4,96 @@
 // 2. https://blog.csdn.net/li_wen01/article/details/62442162
 //
 // The process the filter
-// source buffer filter -> sink buffer filter
+// source buffer filter 0 (main)
+//   -> source buffer 1 (logo)
+//   -> overlay filter (real process for overlaying)
+//   -> sink buffer filter (result you want get)
 //
-// Tips: yuvplayer will be helpful, downloading it on sourceforge.
+// Tips: yuvplayer will be helpful, you can downloading it from sourceforge.
 
 #include <iostream>
-#include <string>
-#include <fstream>
-#include <sstream>
+
+#include "utils.h"
 
 extern "C" {
+#include "libavformat/avformat.h"
 #include "libavfilter/avfilter.h"
 #include "libavfilter/buffersrc.h"
 #include "libavfilter/buffersink.h"
-#include "libavutil/imgutils.h"
-
-// include other file for testing
-#include "libavformat/avformat.h"
-#include "libavcodec/avcodec.h"
 }
 
+#pragma comment(lib, "avformat.lib")
 #pragma comment(lib, "avfilter.lib")
-#pragma comment(lib, "avutil.lib")
-#pragma comment(lib, "avcodec.lib")
 
-AVFilterContext *buffersink_ctx;
-AVFilterContext *buffersrc_ctx;
+AVFilterContext *mainsrc_ctx;
+AVFilterContext *logosrc_ctx;
+AVFilterContext *resultsink_ctx;
 AVFilterGraph *filter_graph;
 
-int init_filters(const char* filters_desc, const AVFrame* frame)
-{
-  char args[512] = { 0 };
-  int ret = 0;
-  char error_msg[256] = { 0 };
- 
-  const AVFilter *buffersrc = avfilter_get_by_name("buffer"); // input buffer filter
-  const AVFilter *buffersink = avfilter_get_by_name("buffersink"); // output buffer filter
-  AVFilterInOut *inputs = avfilter_inout_alloc();
-  AVFilterInOut *outputs = avfilter_inout_alloc();
-  AVRational time_base = { 1, 25 }; // It's suitable for this example, maybe not suitable for you.
+//int init_filters(const char* filters_desc, const AVFrame* frame)
+//{
+//  char args[512] = { 0 };
+//  int ret = 0;
+//  char error_msg[256] = { 0 };
+// 
+//  const AVFilter *buffersrc = avfilter_get_by_name("buffer"); // input buffer filter
+//  const AVFilter *buffersink = avfilter_get_by_name("buffersink"); // output buffer filter
+//  AVFilterInOut *inputs = avfilter_inout_alloc();
+//  AVFilterInOut *outputs = avfilter_inout_alloc();
+//  AVRational time_base = { 1, 25 }; // It's suitable for this example, maybe not suitable for you.
+//
+//  filter_graph = avfilter_graph_alloc();
+//
+//  // buffer video source: the decoded frames from the decoder will be inserted here
+//  snprintf(args, sizeof(args),
+//    "video_size=%dx%d:pix_fmt=%d:time_base=%d/%d:pixel_aspect=%d/%d",
+//    frame->width, frame->height, frame->format,
+//    time_base.num, time_base.den, 1, 1);
+//  ret = avfilter_graph_create_filter(&buffersrc_ctx, buffersrc, "in", args, nullptr, filter_graph);
+//  if (ret < 0) {
+//    std::cerr << "Cannot create buffer source" << std::endl;
+//    goto cleanup_and_return;
+//  }
+//
+//  ret = avfilter_graph_create_filter(&buffersink_ctx, buffersink, "out",
+//                                     nullptr, nullptr, filter_graph);
+//  if (ret < 0) {
+//    std::cerr << "Cannot create buffer sink: " <<
+//      av_make_error_string(error_msg, sizeof(error_msg), ret) << std::endl;
+//    goto cleanup_and_return;
+//  }
+//
+//  outputs->name = av_strdup("in");
+//  outputs->filter_ctx = buffersrc_ctx;
+//  outputs->pad_idx = 0;
+//  outputs->next = nullptr;
+//
+//  inputs->name = av_strdup("out");
+//  inputs->filter_ctx = buffersink_ctx;
+//  inputs->pad_idx = 0;
+//  inputs->next = nullptr;
+//
+//  if ((ret = avfilter_graph_parse_ptr(filter_graph, filters_desc,
+//                                      &inputs, &outputs, nullptr)) < 0)
+//  {
+//    std::cerr << "Parse graph failed: " <<
+//      av_make_error_string(error_msg, sizeof(error_msg), ret) << std::endl;
+//    goto cleanup_and_return;
+//  }
+//
+//  if ((ret = avfilter_graph_config(filter_graph, nullptr)) < 0) {
+//    std::cerr << "Graph config failed" << std::endl;
+//    goto cleanup_and_return;
+//  }
+//
+//cleanup_and_return:
+//  avfilter_inout_free(&inputs);
+//  avfilter_inout_free(&outputs);
+//
+//  return ret;
+//}
 
-  filter_graph = avfilter_graph_alloc();
-
-  // buffer video source: the decoded frames from the decoder will be inserted here
-  snprintf(args, sizeof(args),
-    "video_size=%dx%d:pix_fmt=%d:time_base=%d/%d:pixel_aspect=%d/%d",
-    frame->width, frame->height, frame->format,
-    time_base.num, time_base.den, 1, 1);
-  ret = avfilter_graph_create_filter(&buffersrc_ctx, buffersrc, "in", args, nullptr, filter_graph);
-  if (ret < 0) {
-    std::cerr << "Cannot create buffer source" << std::endl;
-    goto cleanup_and_return;
-  }
-
-  ret = avfilter_graph_create_filter(&buffersink_ctx, buffersink, "out",
-                                     nullptr, nullptr, filter_graph);
-  if (ret < 0) {
-    std::cerr << "Cannot create buffer sink: " <<
-      av_make_error_string(error_msg, sizeof(error_msg), ret) << std::endl;
-    goto cleanup_and_return;
-  }
-
-  outputs->name = av_strdup("in");
-  outputs->filter_ctx = buffersrc_ctx;
-  outputs->pad_idx = 0;
-  outputs->next = nullptr;
-
-  inputs->name = av_strdup("out");
-  inputs->filter_ctx = buffersink_ctx;
-  inputs->pad_idx = 0;
-  inputs->next = nullptr;
-
-  if ((ret = avfilter_graph_parse_ptr(filter_graph, filters_desc,
-                                      &inputs, &outputs, nullptr)) < 0)
-  {
-    std::cerr << "Parse graph failed: " <<
-      av_make_error_string(error_msg, sizeof(error_msg), ret) << std::endl;
-    goto cleanup_and_return;
-  }
-
-  if ((ret = avfilter_graph_config(filter_graph, nullptr)) < 0) {
-    std::cerr << "Graph config failed" << std::endl;
-    goto cleanup_and_return;
-  }
-
-cleanup_and_return:
-  avfilter_inout_free(&inputs);
-  avfilter_inout_free(&outputs);
-
-  return ret;
-}
-
-int init_filters_ex(const AVFrame* inFrame1, const AVFrame* inFrame2)
+int init_filters_ex(const AVFrame* inFrame1, const AVFrame* inFrame2, int x, int y)
 {
   int ret = 0;
   AVFilterInOut *inputs = nullptr;
@@ -109,12 +107,13 @@ int init_filters_ex(const AVFrame* inFrame1, const AVFrame* inFrame2)
   }
 
   snprintf(filter_str, sizeof(filter_str),
-    "buffer=video_size=%dx%d:pix_fmt=%d:time_base=1/25:pixel_aspect=1/1 [in_1];"
-    "buffer=video_size=%dx%d:pix_fmt=%d:time_base=1/25:pixel_aspect=0/1 [in_2];"
-    "[in_1] [in_2] overlay=%d:%d [result]; [result] buffersink",
-    inFrame1->width, inFrame1->height, inFrame1->format,
-    inFrame2->width, inFrame2->height, inFrame2->format,
-    5, 5);
+    "buffer=video_size=%dx%d:pix_fmt=%d:time_base=1/25:pixel_aspect=%d/%d[main];" // Parsed_buffer_0
+    "buffer=video_size=%dx%d:pix_fmt=%d:time_base=1/25:pixel_aspect=%d/%d[logo];" // Parsed_bufer_1
+    "[main][logo]overlay=%d:%d[result];" // Parsed_overlay_2
+    "[result]buffersink", // Parsed_buffer_sink_3
+    inFrame1->width, inFrame1->height, inFrame1->format, inFrame1->sample_aspect_ratio.num, inFrame1->sample_aspect_ratio.den,
+    inFrame2->width, inFrame2->height, inFrame2->format, inFrame2->sample_aspect_ratio.num, inFrame2->sample_aspect_ratio.den,
+    x, y);
 
   ret = avfilter_graph_parse2(filter_graph, filter_str, &inputs, &outputs);
   if (ret < 0) {
@@ -131,43 +130,10 @@ int init_filters_ex(const AVFrame* inFrame1, const AVFrame* inFrame2)
   return 0;
 }
 
-int SaveToI420P(const std::string& filename, const AVFrame* frame)
-{
-  if (frame->format != AV_PIX_FMT_YUV420P) return -1;
-  std::ofstream outfile(filename, std::ios::binary);
-  size_t y_size = frame->width * frame->height;
-  size_t u_size = y_size / 4;
-  outfile.write((const char*)frame->data[0], y_size);
-  outfile.write((const char*)frame->data[1], u_size);
-  outfile.write((const char*)frame->data[2], u_size); // u size is equal to v
-  return 0;
-}
-
-AVFrame* GetFrameFromYUVFile(const std::string& filename, int width, int height, int format)
-{
-  std::ifstream infile(filename, std::ifstream::binary);
-  std::stringstream iss;
-  iss << infile.rdbuf();
-  std::string yuv_data = iss.str();
-
-  AVFrame *frame = av_frame_alloc();
-  int required_size = av_image_fill_arrays(frame->data, frame->linesize,
-    (const uint8_t*)yuv_data.c_str(), (AVPixelFormat) format, width, height, 1);
-  frame->width = width;
-  frame->height = height;
-  frame->format = format;
-
-  return frame;
-}
-
 int main(int argc, char* argv[])
 {
-  const char filename[] = "G:/av-learning/bin/win32/test_1280x720_yuv420p.yuv";
-  const char logo[] = "G:/av-learning/bin/win32/logo.yuv";
-
-  AVFrame* mainFrame = GetFrameFromYUVFile(filename, 1280, 719, AV_PIX_FMT_YUV420P);
-  AVFrame* logoFrame = GetFrameFromYUVFile(logo, 400, 120, AV_PIX_FMT_YUV420P);
-  AVFrame* filte_frame = av_frame_alloc();
+  AVFrame *mainFrame = GetFrameFromPicture("out.jpeg");
+  AVFrame *logoFrame = GetFrameFromPicture("logo.jpg");
 
   int ret = 0;
   // filter_desc can be the following filter
@@ -179,20 +145,27 @@ int main(int argc, char* argv[])
   //const char filter_desc[] = "lutyuv='u=128:v=128'";
   //ret = init_filters(filter_desc, frame);
 
-  init_filters_ex(mainFrame, logoFrame);
+  init_filters_ex(mainFrame, logoFrame, 100, 200);
 
-  // add AVFrame to source buffer filter
-  ret = av_buffersrc_add_frame(buffersrc_ctx, mainFrame);
-  ret = av_buffersrc_add_frame(buffersrc_ctx, logoFrame);
+  // Get AVFilterContext from AVFilterGraph parsing from string
+  mainsrc_ctx = avfilter_graph_get_filter(filter_graph, "Parsed_buffer_0");
+  logosrc_ctx = avfilter_graph_get_filter(filter_graph, "Parsed_buffer_1");
+  resultsink_ctx = avfilter_graph_get_filter(filter_graph, "Parsed_buffersink_3");
 
-  // get AVFrame from sink buffer filter
-  ret = av_buffersink_get_frame(buffersink_ctx, filte_frame);
+  // Fill data to buffer filter context(main, logo)
+  av_buffersrc_add_frame(mainsrc_ctx, mainFrame);
+  av_buffersrc_add_frame(logosrc_ctx, logoFrame);
 
-  SaveToI420P("test-output.yuv", filte_frame);
+  // Get AVFrame from sink buffer filter(result)
+  AVFrame* result_frame = av_frame_alloc();
+  ret = av_buffersink_get_frame(resultsink_ctx, result_frame);
+
+  // Save AVFrame to picture and check
+  SaveFrameToJPEG("test-output.jpeg", result_frame);
 
   av_frame_free(&mainFrame);
   av_frame_free(&logoFrame);
-  av_frame_free(&filte_frame);
+  av_frame_free(&result_frame);
   avfilter_graph_free(&filter_graph);
   
   return 0;

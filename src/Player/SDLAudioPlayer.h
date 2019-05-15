@@ -2,22 +2,24 @@
 #define _SDL_AUDIO_PLAYER_
 
 #include <cstdint>
+#define SDL_MAIN_HANDLED
+#include "SDL.h"
 
 class SDLAudioPlayer
 {
 public:
   SDLAudioPlayer();
   ~SDLAudioPlayer();
-  bool Init(int sample_rate, const char* format, int channels);
+  bool Init(int sample_rate, const char* format, int channels, void callback(void *, uint8_t*, int), void *opaque);
   void Play();
   void Stop();
-  void Queue(uint8_t* data, int len);
 
 private:
   int channels_;
   int sampleRate_;
   uint16_t format_;
   int deviceId_;
+  SDL_AudioSpec spec_;
 };
 
 #endif

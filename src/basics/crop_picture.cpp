@@ -1,3 +1,6 @@
+// AVFilterContext linked list:
+// Parsed_buffer_0 -> Parsed_crop_1 -> Parsed_buffersink_2
+
 #include <iostream>
 #include <string>
 #include <fstream>
@@ -27,9 +30,9 @@ AVFrame* CropFrame(const AVFrame* src, int x, int y, int w, int h)
 
   char args[512] = { 0 };
   snprintf(args, sizeof(args),
-    "buffer=video_size=%dx%d:pix_fmt=%d:time_base=1/1:pixel_aspect=1/1[in];"
-    "[in]crop=x=%d:y=%d:out_w=%d:out_h=%d[out];"
-    "[out]buffersink",
+    "buffer=video_size=%dx%d:pix_fmt=%d:time_base=1/1:pixel_aspect=1/1[in];" // Parsed_buffer_0
+    "[in]crop=x=%d:y=%d:out_w=%d:out_h=%d[out];"  // Parsed_crop_1
+    "[out]buffersink", // Parsed_buffersink_2
     src->width, src->height, src->format,
     x, y, w, h);
   ret = avfilter_graph_parse2(avFilterGraph, args, &inputs, &outputs);
@@ -63,14 +66,14 @@ cleanup:
 
 int main(int argc, char* argv[])
 {
-  const char filename[] = "F:/av-learning/bin/win32/thor_640x360_yuv420p.yuv";
+  const char filename[] = "test_1280x720_yuv420p.yuv";
   std::ifstream infile(filename, std::ifstream::binary);
   std::stringstream iss;
   iss << infile.rdbuf();
   std::string yuv_data = iss.str();
 
-  int width = 640;
-  int height = 360;
+  int width = 1280;
+  int height = 720;
   AVPixelFormat format = AV_PIX_FMT_YUV420P;
   // auto pic_size = av_image_get_buffer_size(AV_PIX_FMT_YUV420P, 640, 360, 1);
 

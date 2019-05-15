@@ -1,7 +1,5 @@
 #include "SDLAudioPlayer.h"
 
-#define SDL_MAIN_HANDLED
-#include "SDL.h"
 #include "SDL_Audio.h"
 #pragma comment(lib, "SDL2.lib")
 
@@ -29,7 +27,8 @@ SDLAudioPlayer::~SDLAudioPlayer()
   SDL_CloseAudioDevice(deviceId_);
 }
 
-bool SDLAudioPlayer::Init(int sample_rate, const char *format, int channels)
+bool SDLAudioPlayer::Init(int sample_rate, const char *format, int channels,
+  void callback(void *, uint8_t*, int), void *opaque)
 {
   if (sdl_sample_format_map.find(format) == sdl_sample_format_map.end())
   {
@@ -49,8 +48,8 @@ bool SDLAudioPlayer::Init(int sample_rate, const char *format, int channels)
   wanted_spec.freq = sample_rate;
   wanted_spec.format = sdl_sample_format_map.at(format);
   wanted_spec.channels = channels;
-  wanted_spec.callback = nullptr;
-  wanted_spec.userdata = nullptr;
+  wanted_spec.callback = callback;
+  wanted_spec.userdata = opaque;
 
   deviceId_ = SDL_OpenAudioDevice(nullptr, 0, &wanted_spec, &obtained_spec, 1);
   if (deviceId_ < 2) {
@@ -61,6 +60,7 @@ bool SDLAudioPlayer::Init(int sample_rate, const char *format, int channels)
   sampleRate_ = sample_rate;
   channels_ = channels;
   format_ = sdl_sample_format_map.at(format);
+  spec_ = obtained_spec;
 
   return true;
 }
@@ -73,17 +73,4 @@ void SDLAudioPlayer::Play()
 void SDLAudioPlayer::Stop()
 {
   SDL_PauseAudioDevice(deviceId_, 1);
-}
-
-void SDLAudioPlayer::Queue(uint8_t *data, int len)
-{
-  int sample_size_per_sec = (sampleRate_ * channels_ * (format_ & SDL_AUDIO_MASK_BITSIZE) / 8);
-  int sleep_time = len * 1000 / sample_size_per_sec;
-  int ret = SDL_QueueAudio(deviceId_, data, len);
-  if (ret != 0) {
-    std::cerr << "Error: SDL_QueueAudio failed: " << SDL_GetError() << std::endl;
-    assert(ret == 0);
-  }
-  // SDL_Delay(sleep_time - 5);
-  std::cout << "Queued size: " << SDL_GetQueuedAudioSize(deviceId_) << std::endl;
 }
