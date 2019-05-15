@@ -14,11 +14,9 @@
       "problemMatcher": "$msCompile"
     },
     {
-      "label": "cmake",
-      "command": "cmake.exe",
-      "args": [
-        ".."
-      ],
+      "label": "CMake",
+      "type": "shell",
+      "command": "cmake ..",
       "options": {
         "cwd": "${fileDirname}/build"
       },

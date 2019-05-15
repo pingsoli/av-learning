@@ -8,7 +8,7 @@ if(MSVC)
         /SAFESEH:NO \
         /SUBSYSTEM:CONSOLE \
         /NODEFAULTLIB:library")
-    add_compile_options(/wd4819) # disable warning C4819 under MSVC
+    add_compile_options(/wd4819 /wd4244 /wd4018 /wd4090 /wd4305 /wd4996) # disable warning C4819 under MSVC
 endif()
 
 set(MY_ROOT_PATH "${CMAKE_SOURCE_DIR}/../..")
