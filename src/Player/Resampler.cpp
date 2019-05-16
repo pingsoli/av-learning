@@ -5,9 +5,6 @@ extern "C" {
 #include "libswresample/swresample.h"
 }
 
-#pragma comment(lib, "avformat.lib")
-#pragma comment(lib, "swresample.lib")
-
 Resampler::Resampler()
 {
 }

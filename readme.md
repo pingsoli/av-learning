@@ -1,7 +1,7 @@
 ### Project Introduction
 
 ```
-the project directory
+the project directory hierarchy
 |-- bin            output executable files and dll files(dynamic libraries) location.
 |   |-- win32
 |   |-- win64

@@ -1,9 +1,7 @@
 #include "SDLVideoPlayer.h"
 
-#define SDL_MAIN_HANDLED
 #include "SDL.h"
 #include "SDL_Video.h"
-#pragma comment(lib, "SDL2.lib")
 
 extern "C" {
  #include "libavformat/avformat.h"

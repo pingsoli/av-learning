@@ -19,6 +19,8 @@ public:
   int Width() const { return width_; }
   int Height() const { return height_; }
   std::string Filename() const { return filename_; }
+  int GetVideoTimebase() const { return video_time_base_; }
+  int GetAudioTimebase() const { return audio_time_base_; }
 
 private:
   std::string filename_;
@@ -30,6 +32,8 @@ private:
   int width_;
   int height_;
   uint64_t duration_; // milliseconds
+  int video_time_base_;
+  int audio_time_base_; // usually is sample rate.
 };
 
 #endif

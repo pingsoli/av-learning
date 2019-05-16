@@ -2,7 +2,6 @@
 #define _SDL_AUDIO_PLAYER_
 
 #include <cstdint>
-#define SDL_MAIN_HANDLED
 #include "SDL.h"
 
 class SDLAudioPlayer
@@ -20,6 +19,9 @@ private:
   uint16_t format_;
   int deviceId_;
   SDL_AudioSpec spec_;
+
+  const int sdl_audio_min_buffer_size = 512;
+  const int sdl_audio_max_callbacks_per_sec = 30;
 };
 
 #endif

@@ -58,3 +58,9 @@ target_link_libraries(
     avformat avcodec avfilter avutil swresample swscale
     SDL2
 )
+
+set_property(
+    TARGET ffplay
+    PROPERTY
+    VS_DEBUGGER_WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG}
+)

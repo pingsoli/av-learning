@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.0)
 set(CMAKE_BUILD_TYPE Debug)
 
 if(MSVC)
-    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+    add_definitions(-D_CRT_SECURE_NO_WARNINGS -DSDL_MAIN_HANDLED)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SAFESEH:NO /SUBSYSTEM:CONSOLE")
     add_compile_options(/wd4819) # disable warning C4819 under MSVC
 endif()
@@ -44,16 +44,24 @@ link_directories(
   ${SDL_LIBRARY_DIRECTORY}
 )
 
-add_executable(main
+set(target_name "main")
+
+add_executable(${target_name}
   main.cpp
   MediaInfo.cpp
   Decoder.cpp
-  SDLAudioPlayer.cpp
   Resampler.cpp
+  SDLAudioPlayer.cpp
   SDLVideoPlayer.cpp
 )
+
 set_property(
-    TARGET main
+    TARGET ${target_name}
     PROPERTY
     VS_DEBUGGER_WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG}
+)
+
+target_link_libraries(${target_name}
+  avformat avcodec avutil swresample swscale
+  SDL2
 )

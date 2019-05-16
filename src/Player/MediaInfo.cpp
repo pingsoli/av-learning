@@ -6,9 +6,6 @@ extern "C" {
 #include "libavcodec/avcodec.h"
 }
 
-#pragma comment(lib, "avformat.lib")
-#pragma comment(lib, "avcodec.lib")
-
 MediaInfo::MediaInfo()
   : avFormatCtx_(nullptr),
     audioStreamIdx_(-1),
@@ -48,19 +45,28 @@ bool MediaInfo::Open(const std::string& filename)
   duration_ = avFormatCtx_->duration / (AV_TIME_BASE / 1000);
   avformat_find_stream_info(avFormatCtx_, nullptr);
 
-  width_ = avFormatCtx_->streams[videoStreamIdx_]->codecpar->width;
-  height_ = avFormatCtx_->streams[videoStreamIdx_]->codecpar->height;
+  if (videoStreamIdx_ != -1) {
+    AVStream* videoStream = avFormatCtx_->streams[videoStreamIdx_];
+    width_ = videoStream->codecpar->width;
+    height_ = videoStream->codecpar->height;
+    video_time_base_ = videoStream->time_base.den;
+  }
+
+  if (audioStreamIdx_ != -1) {
+    AVStream *audioStream = avFormatCtx_->streams[audioStreamIdx_];
+    audio_time_base_ = audioStream->time_base.den;
+  }
 
   return true;
 }
 
 AVCodecParameters* MediaInfo::GetVideoCodecParameters() const {
-  return (avFormatCtx_ ?
+  return (avFormatCtx_ && (videoStreamIdx_ != -1) ?
     avFormatCtx_->streams[videoStreamIdx_]->codecpar : nullptr
   );
 }
 AVCodecParameters* MediaInfo::GetAudioCodecParameters() const {
-  return (avFormatCtx_ ?
+  return (avFormatCtx_ && (audioStreamIdx_ != -1) ?
     avFormatCtx_->streams[audioStreamIdx_]->codecpar : nullptr
   );
 }

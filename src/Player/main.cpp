@@ -6,12 +6,6 @@
 #include <fstream>
 #include <ctime>
 
-#pragma comment(lib, "avformat.lib")
-#pragma comment(lib, "avcodec.lib")
-#pragma comment(lib, "avutil.lib")
-#pragma comment(lib, "swresample.lib") // audio resample
-#pragma comment(lib, "swscale.lib")
-
 extern "C" {
 #include "libavformat/avformat.h"
 #include "libavcodec/avcodec.h"
@@ -20,6 +14,7 @@ extern "C" {
 #include "libswresample/swresample.h"
 #include "libavutil/imgutils.h"
 #include "libavutil/error.h"
+#include "libavutil/time.h"
 #include "libswscale/swscale.h"
 }
 
@@ -30,21 +25,21 @@ extern "C" {
 #include "SDLVideoPlayer.h"
 #include "Resampler.h"
 
-#define SDL_MAIN_HANDLED
 #include "SDL.h"
-#pragma comment(lib, "SDL2.lib")
 
-void PrintCurrentTime()
+// NOTE: the function is not thread-safe, the time is not precise.
+const char* CurrentTimeStr()
 {
   auto currentTime = std::chrono::system_clock::now();
-  static char buffer[80];
+  static char buffer[80] = { 0 };
 
   auto transformed = currentTime.time_since_epoch().count() / 1000000;
   auto millis = transformed % 1000;
   std::time_t tt;
   tt = std::chrono::system_clock::to_time_t(currentTime);
-  strftime(buffer, sizeof(buffer), "%F %H:%M:%S", localtime(&tt));
-  printf("%s.%03d\n", buffer, (int) millis);
+  std::size_t pos = strftime(buffer, sizeof(buffer), "%F %T", localtime(&tt));
+  snprintf(buffer + pos, sizeof(buffer) - pos, ".%03d", (int) millis);
+  return buffer;
 }
 
 struct PlayState {
@@ -53,6 +48,34 @@ struct PlayState {
 
   double audioClock;
   double videoClock;
+};
+
+void audio_callback(void *opaque, uint8_t* stream, int len) {
+  PlayState *state = (PlayState*)opaque;
+  Queue<AVFrame*> *queue = state->samplesQueue;
+  std::size_t data_size = 0;
+  uint8_t* audio_buf = nullptr;
+  int len1 = 0;
+
+  while (len > 0) {
+    AVFrame *frame = queue->Pop();
+
+    data_size = av_samples_get_buffer_size(nullptr,
+      frame->channels, frame->nb_samples, (AVSampleFormat)frame->format, 1);
+    audio_buf = frame->data[0];
+    len1 = data_size;
+    if (len1 > len)
+      len1 = len;
+
+    memcpy(stream, audio_buf, len1);
+
+    len -= len1;
+    stream += len1;
+
+    state->audioClock = frame->pts * av_q2d({ 1, frame->sample_rate }) + (double)frame->nb_samples / frame->sample_rate;
+    av_frame_free(&frame);
+  }
+  //std::cout << av_gettime_relative() / 1000 << " ms, audio clock " << state->audioClock << std::endl;
 };
 
 int main(int argc, char *argv[])
@@ -66,7 +89,7 @@ int main(int argc, char *argv[])
   Queue<AVPacket*> videoPktQueue;
   Queue<AVPacket*> audioPktQueue;
 
-  Queue<AVFrame*> audioFrameQueue;
+  Queue<AVFrame*> audioFrameQueue(30);
   Queue<AVFrame*> videoFrameQueue;
 
   PlayState state;
@@ -81,39 +104,12 @@ int main(int argc, char *argv[])
   mediaInfo.Open("src.mp4");
   decoder.Open(mediaInfo);
 
-  // todo: some left audio data will not be played ? how to flush it ?
-  auto audio_callback = [] (void *opaque, uint8_t* stream, int len) {
-    PlayState *state = (PlayState*) opaque;
-    Queue<AVFrame*> *queue = state->samplesQueue;
-    std::size_t data_size = 0;
-    uint8_t* audio_buf = nullptr;
-    int len1 = 0;
-
-    while (len > 0) {
-      AVFrame *frame = queue->Pop();
-
-      data_size = av_samples_get_buffer_size(nullptr,
-        frame->channels, frame->nb_samples, (AVSampleFormat) frame->format, 1);
-      audio_buf = frame->data[0];
-      len1 = data_size;
-      if (len1 > len)
-        len1 = len;
-
-      memcpy(stream, audio_buf, len1);
-      
-      len -= len1;
-      stream += len1;
-
-      state->audioClock = frame->pts * av_q2d({ 1, frame->sample_rate }) + (double)frame->nb_samples / frame->sample_rate;
-      av_frame_free(&frame);
-    }
-
-    std::cout << "audio clock: " << state->audioClock << std::endl;
-  };
-
   int channels = mediaInfo.GetAudioCodecParameters()->channels;
   int sample_rate = mediaInfo.GetAudioCodecParameters()->sample_rate;
   int sampleFormat = mediaInfo.GetAudioCodecParameters()->format;
+
+  int video_timebase = mediaInfo.GetVideoTimebase();
+  int audio_timebase = mediaInfo.GetAudioTimebase();
 
   resampler.Init(AV_CH_LAYOUT_STEREO, AV_SAMPLE_FMT_S16, sample_rate,
                  AV_CH_LAYOUT_STEREO, (AVSampleFormat)sampleFormat, sample_rate);
@@ -122,10 +118,12 @@ int main(int argc, char *argv[])
 
   std::thread demuxThread(
     [&mediaInfo, &isPlaying, &audioPktQueue, &videoPktQueue] {
-
       AVPacket* tmpPkt;
       while (isPlaying) {
+
         AVPacket pkt;
+        av_init_packet(&pkt);
+        pkt.data = nullptr;
         pkt.size = 0;
 
         int r = av_read_frame(mediaInfo.GetFormatContext(), &pkt);
@@ -173,19 +171,38 @@ int main(int argc, char *argv[])
   });
 
   std::thread videoDecodeThread(
-    [&isPlaying, &decoder, &videoPktQueue, &videoPlayer] {
+    [&isPlaying, &decoder, &videoPktQueue, &videoPlayer, &videoFrameQueue] {
 
+    AVFrame *frame = av_frame_alloc();
+    AVFrame *copyFrame = nullptr;
       while (isPlaying) {
         AVPacket* pkt = videoPktQueue.Pop();
         int ret = avcodec_send_packet(decoder.GetVideoCodecContext(), pkt);
         av_packet_free(&pkt);
         if (ret < 0) break;
 
-        AVFrame *frame = av_frame_alloc();
         while ((ret = avcodec_receive_frame(decoder.GetVideoCodecContext(), frame)) == 0) {
-          videoPlayer.Render(frame);
-          std::this_thread::sleep_for(std::chrono::milliseconds(33));
+          copyFrame = av_frame_clone(frame);
+          videoFrameQueue.Push(copyFrame);
         }
+      }
+    }
+  );
+
+  std::thread displayThread(
+    [&videoFrameQueue, &isPlaying, &videoPlayer, &video_timebase] () {
+      int64_t last_pts = 0;
+      double pts = 0.0;
+      
+      while (isPlaying) {
+        AVFrame *frame = videoFrameQueue.Pop();
+
+        pts = frame->pts * av_q2d({1, video_timebase});
+        last_pts = frame->pts;
+        
+        videoPlayer.Render(frame);
+        std::this_thread::sleep_for(std::chrono::milliseconds(25));
+        av_frame_free(&frame);
       }
     }
   );
@@ -209,6 +226,7 @@ int main(int argc, char *argv[])
   demuxThread.join();
   audioDecodeThread.join();
   videoDecodeThread.join();
+  displayThread.join();
 
   return 0;
 }

@@ -36,6 +36,11 @@ public:
     return copy;
   }
 
+  std::size_t Size() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return q_.size();
+  }
+
 private:
   std::queue<T> q_;
   std::size_t max_size_;
