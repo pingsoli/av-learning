@@ -60,8 +60,8 @@
 
 #include <assert.h>
 
-#define DEBUG
-#define DEBUG_SYNC
+//#define DEBUG
+//#define DEBUG_SYNC
 
 const char program_name[] = "ffplay";
 const int program_birth_year = 2003;
@@ -328,7 +328,7 @@ static float seek_interval = 10;
 static int display_disable;
 static int borderless;
 static int startup_volume = 100;
-static int show_status = 1;
+static int show_status = 0;
 static int av_sync_type = AV_SYNC_AUDIO_MASTER;
 static int64_t start_time = AV_NOPTS_VALUE;
 static int64_t duration = AV_NOPTS_VALUE;
@@ -1691,7 +1691,7 @@ retry:
 display:
         /* display picture */
         if (!display_disable && is->force_refresh && is->show_mode == SHOW_MODE_VIDEO && is->pictq.rindex_shown)
-            video_display(is);
+          video_display(is);
     }
     is->force_refresh = 0;
     if (show_status) {
@@ -2489,6 +2489,7 @@ static void sdl_audio_callback(void *opaque, Uint8 *stream, int len)
     if (!isnan(is->audio_clock)) {
         set_clock_at(&is->audclk, is->audio_clock - (double)(2 * is->audio_hw_buf_size + is->audio_write_buf_size) / is->audio_tgt.bytes_per_sec, is->audio_clock_serial, audio_callback_time / 1000000.0);
         sync_clock_to_slave(&is->extclk, &is->audclk);
+        //printf("audio clock: %f, pts: %f, %f\n", is->audio_clock, is->audclk.pts, is->audio_clock - is->audclk.pts);
     }
 }
 
@@ -3230,8 +3231,10 @@ static void refresh_loop_wait_event(VideoState *is, SDL_Event *event) {
             SDL_ShowCursor(0);
             cursor_hidden = 1;
         }
-        if (remaining_time > 0.0)
-            av_usleep((int64_t)(remaining_time * 1000000.0));
+        if (remaining_time > 0.0) {
+          av_usleep((int64_t)(remaining_time * 1000000.0));
+          //printf("sleep time: %lld ms\n", (int64_t)(remaining_time * 1000000.0 / 1000));
+        }
         remaining_time = REFRESH_RATE;
         if (is->show_mode != SHOW_MODE_NONE && (!is->paused || is->force_refresh))
             video_refresh(is, &remaining_time);

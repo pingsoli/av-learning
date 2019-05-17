@@ -27,27 +27,14 @@ extern "C" {
 
 #include "SDL.h"
 
-// NOTE: the function is not thread-safe, the time is not precise.
-const char* CurrentTimeStr()
-{
-  auto currentTime = std::chrono::system_clock::now();
-  static char buffer[80] = { 0 };
-
-  auto transformed = currentTime.time_since_epoch().count() / 1000000;
-  auto millis = transformed % 1000;
-  std::time_t tt;
-  tt = std::chrono::system_clock::to_time_t(currentTime);
-  std::size_t pos = strftime(buffer, sizeof(buffer), "%F %T", localtime(&tt));
-  snprintf(buffer + pos, sizeof(buffer) - pos, ".%03d", (int) millis);
-  return buffer;
-}
-
 struct PlayState {
   Queue<AVFrame*> *samplesQueue;
   Queue<AVFrame*> *picturesQueue;
 
   double audioClock;
   double videoClock;
+
+  int bytes_per_sec; // audio only
 };
 
 void audio_callback(void *opaque, uint8_t* stream, int len) {
@@ -57,8 +44,9 @@ void audio_callback(void *opaque, uint8_t* stream, int len) {
   uint8_t* audio_buf = nullptr;
   int len1 = 0;
 
+  AVFrame *frame = nullptr;
   while (len > 0) {
-    AVFrame *frame = queue->Pop();
+    frame = queue->Pop();
 
     data_size = av_samples_get_buffer_size(nullptr,
       frame->channels, frame->nb_samples, (AVSampleFormat)frame->format, 1);
@@ -71,11 +59,15 @@ void audio_callback(void *opaque, uint8_t* stream, int len) {
 
     len -= len1;
     stream += len1;
-
-    state->audioClock = frame->pts * av_q2d({ 1, frame->sample_rate }) + (double)frame->nb_samples / frame->sample_rate;
-    av_frame_free(&frame);
   }
-  //std::cout << av_gettime_relative() / 1000 << " ms, audio clock " << state->audioClock << std::endl;
+
+  state->audioClock = frame->pts * av_q2d({1, frame->sample_rate})
+    + (double) frame->nb_samples / frame->sample_rate;
+
+  // set audio clock
+  std::cout << "audio clock: " << state->audioClock << std::endl;
+
+  av_frame_free(&frame);
 };
 
 int main(int argc, char *argv[])
@@ -193,15 +185,19 @@ int main(int argc, char *argv[])
     [&videoFrameQueue, &isPlaying, &videoPlayer, &video_timebase] () {
       int64_t last_pts = 0;
       double pts = 0.0;
+      double duration = 0.0;
+      double delay = 0.0;
       
       while (isPlaying) {
         AVFrame *frame = videoFrameQueue.Pop();
 
         pts = frame->pts * av_q2d({1, video_timebase});
-        last_pts = frame->pts;
-        
+        duration = pts - last_pts * av_q2d({1, video_timebase});
+        // std::cout << "duration: " << duration << std::endl;
+
         videoPlayer.Render(frame);
         std::this_thread::sleep_for(std::chrono::milliseconds(25));
+        last_pts = frame->pts;
         av_frame_free(&frame);
       }
     }
