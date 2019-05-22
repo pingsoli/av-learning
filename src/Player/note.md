@@ -1,5 +1,9 @@
 ### Player
 
+**NOTE:**
+the synchronization of video and audio is copied from ffplay.c.
+
+---
 #### What's the meaning of 'sw' of swresample and swscale libraries ?
 it means software. click [here](https://stackoverflow.com/questions/43066572/what-is-the-meaning-of-sw-in-libswscale-of-ffmpeg) for original answer.
 
@@ -31,6 +35,9 @@ rendering process is too slow, and Video AVFrame Queue is full, and Video AVPack
 more data, and demux thread must wait until Video AVPacket Queue is not full(decoded by video decoding thread), and Audio AVPacket
 Queue is consumed too fast(decoded -> playing through speaker) and has no enough data. so there is reason for noise at the middle of
 playing audio.
+
+**Conlusion:**  
+videoPktQueue pushing speed will influence audioPktQueue pushing process.
 
 ---
 #### Thread is dead at some place, not going to play video or audio ?

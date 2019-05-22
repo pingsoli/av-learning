@@ -1576,6 +1576,8 @@ static void update_video_pts(VideoState *is, double pts, int64_t pos, int serial
     sync_clock_to_slave(&is->extclk, &is->vidclk);
 }
 
+
+int picture_render_count = 0;
 /* called to display each frame */
 static void video_refresh(void *opaque, double *remaining_time)
 {
@@ -1624,6 +1626,7 @@ retry:
             delay = compute_target_delay(last_duration, is);
 
             time= av_gettime_relative()/1000000.0;
+            printf("current time: %f, timer: %f, delay: %f\n", time, is->frame_timer, delay);
             if (time < is->frame_timer + delay) {
                 *remaining_time = FFMIN(is->frame_timer + delay - time, *remaining_time);
                 goto display;
@@ -1690,8 +1693,10 @@ retry:
         }
 display:
         /* display picture */
-        if (!display_disable && is->force_refresh && is->show_mode == SHOW_MODE_VIDEO && is->pictq.rindex_shown)
+        if (!display_disable && is->force_refresh && is->show_mode == SHOW_MODE_VIDEO && is->pictq.rindex_shown) {
           video_display(is);
+          ++picture_render_count;
+        }
     }
     is->force_refresh = 0;
     if (show_status) {
@@ -3223,6 +3228,7 @@ static void toggle_audio_display(VideoState *is)
     }
 }
 
+int video_refresh_count = 0;
 static void refresh_loop_wait_event(VideoState *is, SDL_Event *event) {
     double remaining_time = 0.0;
     SDL_PumpEvents();
@@ -3233,11 +3239,17 @@ static void refresh_loop_wait_event(VideoState *is, SDL_Event *event) {
         }
         if (remaining_time > 0.0) {
           av_usleep((int64_t)(remaining_time * 1000000.0));
-          //printf("sleep time: %lld ms\n", (int64_t)(remaining_time * 1000000.0 / 1000));
+          //printf("[ %d ][ %d ][ %f ], sleep time: %lld ms\n",
+          //  video_refresh_count,
+          //  picture_render_count,
+          //  av_gettime_relative() / 1000000.0,
+          //  (int64_t)(remaining_time * 1000000.0 / 1000));
         }
         remaining_time = REFRESH_RATE;
-        if (is->show_mode != SHOW_MODE_NONE && (!is->paused || is->force_refresh))
-            video_refresh(is, &remaining_time);
+        if (is->show_mode != SHOW_MODE_NONE && (!is->paused || is->force_refresh)) {
+          video_refresh(is, &remaining_time);
+          ++video_refresh_count;
+        }
         SDL_PumpEvents();
     }
 }

@@ -65,7 +65,7 @@ void audio_callback(void *opaque, uint8_t* stream, int len) {
     + (double) frame->nb_samples / frame->sample_rate;
 
   // set audio clock
-  std::cout << "audio clock: " << state->audioClock << std::endl;
+  // std::cout << "audio clock: " << state->audioClock << std::endl;
 
   av_frame_free(&frame);
 };
@@ -182,23 +182,73 @@ int main(int argc, char *argv[])
   );
 
   std::thread displayThread(
-    [&videoFrameQueue, &isPlaying, &videoPlayer, &video_timebase] () {
+    [&videoFrameQueue, &isPlaying, &videoPlayer, &video_timebase, &state] () {
       int64_t last_pts = 0;
       double pts = 0.0;
       double duration = 0.0;
       double delay = 0.0;
+      double diff = 0.0;
+      double time = 0;
+      double frame_timer = 0;
+      double remaining_time = 0;
+      int force_refresh = 0;
+      AVFrame *frame = nullptr;
       
-      while (isPlaying) {
-        AVFrame *frame = videoFrameQueue.Pop();
+      while (true) {
+
+        if (!isPlaying) {
+          std::this_thread::sleep_for(std::chrono::microseconds(10));
+          continue;
+        }
+        remaining_time = 0.01;
+        frame = videoFrameQueue.Pop();
 
         pts = frame->pts * av_q2d({1, video_timebase});
         duration = pts - last_pts * av_q2d({1, video_timebase});
-        // std::cout << "duration: " << duration << std::endl;
 
-        videoPlayer.Render(frame);
-        std::this_thread::sleep_for(std::chrono::milliseconds(25));
-        last_pts = frame->pts;
-        av_frame_free(&frame);
+wait_to_play:
+        // delay policy
+        diff = pts - state.audioClock;
+        delay = duration;
+        if (diff >= 0.1 && duration > 0.1) {
+          delay += diff;
+        } else if (diff >= 0.1) {
+          delay *= 2;
+        }
+
+        // std::cout <<
+        //   "diff: " << diff << " | "
+        //   "delay time: " << delay
+        //   << std::endl;
+
+        time = av_gettime_relative() / 1000000.0;
+        if (time < frame_timer + delay) {
+          remaining_time = std::min(frame_timer - time + delay, remaining_time);
+          std::cout << "remaining time: " << remaining_time << std::endl;
+          goto display;
+        }
+
+        frame_timer += delay;
+        if (delay > 0 && time - frame_timer > 0.1) {
+          frame_timer = time;
+        }
+
+        force_refresh = 1;
+display:
+        if (force_refresh) {
+          videoPlayer.Render(frame);
+          last_pts = frame->pts;
+          av_frame_free(&frame);
+          force_refresh = 0;
+          std::this_thread::sleep_for(std::chrono::microseconds((int64_t)(remaining_time * 1000000.0)));
+          // std::cout << "sleep time: " << remaining_time << std::endl;
+          continue;
+        } else {
+          std::this_thread::sleep_for(std::chrono::microseconds((int64_t)(remaining_time * 1000000.0)));
+          // std::cout << "sleep time: " << remaining_time << std::endl;
+          remaining_time = 0.01;
+        }
+        goto wait_to_play;
       }
     }
   );
