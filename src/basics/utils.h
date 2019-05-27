@@ -6,6 +6,9 @@
 #include <fstream>
 #include <iostream>
 
+#include <chrono>
+#include <ctime>
+
 extern "C" {
 #include "libavformat/avformat.h"
 #include "libavutil/imgutils.h"
@@ -133,7 +136,6 @@ AVFrame* GetFrameFromPicture(const std::string& filename)
   ret_code = avcodec_open2(avCodecCtx, codec, nullptr);
   if (ret_code < 0) goto cleanup_and_return;
 
-
   AVPacket pkt;
   av_init_packet(&pkt);
   pkt.data = nullptr;
@@ -161,6 +163,19 @@ AVFrame* AVFrameMalloc(int width, int height, int format)
   frame->format = format;
   av_frame_get_buffer(frame, 1);
   return frame;
+}
+
+// NOTE: not thread-safe
+char* CurrentTimeStr()
+{
+  auto now = std::chrono::system_clock::now();
+  auto mills = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+  std::time_t t = std::time(nullptr);
+
+  static char buf[24] = { 0 };
+  std::size_t len = std::strftime(buf, sizeof(buf), "%F %T", std::localtime(&t));
+  std::sprintf(buf + len, ".%03lld", mills % 1000);
+  return buf;
 }
 
 #endif

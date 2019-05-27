@@ -57,10 +57,6 @@ int main(int argc, char* argv[])
       std::cerr << "Queue Audio Failed: " << SDL_GetError() << std::endl;
     }
 
-    // count += read_size;
-    // std::cout << "pos " << count << std::endl;
-
-    // std::this_thread::sleep_for(19ms);
     SDL_Delay(interval); // 19ms delay for audio playing and goto next frame
   }
 

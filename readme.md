@@ -17,6 +17,10 @@ the project directory hierarchy
 |   |   |-- ...
 |   |-- ...
 |-- src            all codes(projects) are here.
+|   |-- basics              common library basic usages and test codes
+|   |-- ffplay-learning     ffplay source code learning project
+|   |-- Player              Meida file player with av sync
+|   |-- ...
 ```
 
 NOTE: Only commit the `src` directory, others are ignored.  
@@ -24,3 +28,24 @@ On linux platform, don't have to move all dynamic libraries to current project d
 just specify the path on configuration file(such as *.pro file).  
 On windows platform, for convenience, copy all .dlls to `bin/win32` or `bin/win64` directory, and you can
 test and debug the program directly.
+
+---
+#### Project Abstract
+**FFmpeg**  
+get media file information  
+important video and audio stream parameters  
+decode frame(AVPacket and AVFrame)  
+swresample and swscale satisfy our hardware requirements  
+AVFilters  
+
+**SDL2**  
+playing audio and rendering picture  
+
+**libyuv**  
+pixel format conversion, such as YUV to RGB, RGB to YUV or YUV411 to YUV420  
+
+**SoundTouch**  
+variable speed playback for audio(0.5x, 1.0x, 1.5x, 2.0x and etc.)  
+
+**Qt5**  
+GUI design and multi-meida components  
