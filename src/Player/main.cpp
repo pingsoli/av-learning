@@ -1,33 +1,6 @@
-#include <iostream>
-#include <thread>
-#include <atomic>
-#include <chrono>
-#include <unordered_map>
-#include <fstream>
-#include <ctime>
+#include "header.h"
 
-extern "C" {
-#include "libavformat/avformat.h"
-#include "libavcodec/avcodec.h"
-#include "libavutil/avutil.h"
-#include "libavutil/opt.h"
-#include "libswresample/swresample.h"
-#include "libavutil/imgutils.h"
-#include "libavutil/error.h"
-#include "libavutil/time.h"
-#include "libswscale/swscale.h"
-}
-
-#include "MediaInfo.h"
-#include "Decoder.h"
-#include "Queue.h"
-#include "SDLAudioPlayer.h"
-#include "SDLVideoPlayer.h"
-#include "Resampler.h"
-
-#include "SDL.h"
-
-struct PlayState {
+struct State {
   Queue<AVFrame*> *samplesQueue;
   Queue<AVFrame*> *picturesQueue;
 
@@ -38,7 +11,7 @@ struct PlayState {
 };
 
 void audio_callback(void *opaque, uint8_t* stream, int len) {
-  PlayState *state = (PlayState*)opaque;
+  State *state = (State*)opaque;
   Queue<AVFrame*> *queue = state->samplesQueue;
   std::size_t data_size = 0;
   uint8_t* audio_buf = nullptr;
@@ -84,7 +57,7 @@ int main(int argc, char *argv[])
   Queue<AVFrame*> audioFrameQueue(30);
   Queue<AVFrame*> videoFrameQueue;
 
-  PlayState state;
+  State state;
   state.samplesQueue = &audioFrameQueue;
   state.picturesQueue = &videoFrameQueue;
   state.audioClock = 0.0;

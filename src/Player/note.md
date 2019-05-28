@@ -5,7 +5,7 @@ the synchronization of video and audio is copied from ffplay.c.
 
 ---
 #### What's the meaning of 'sw' of swresample and swscale libraries ?
-it means software. click [here](https://stackoverflow.com/questions/43066572/what-is-the-meaning-of-sw-in-libswscale-of-ffmpeg) for original answer.
+it means 'software'. click [here](https://stackoverflow.com/questions/43066572/what-is-the-meaning-of-sw-in-libswscale-of-ffmpeg) for original answer.
 
 ---
 #### How to contorl SDL audio callback's frequency ?
@@ -13,7 +13,7 @@ set smaples field of SDL_AudioSpec.
 
 ---
 #### Some noise when playing audio at middle ?
-at beginning, Audio AVPacket Queue will be full, then starts to decrease, at last, wait a long time
+At beginning, Audio AVPacket Queue will be full, then starts to decrease, at last, wait a long time
 to get a audio AVPacket, because current thread is stucked at `videoPktQueue.Push(tmpPkt)`.
 
 at last, I found the problem
@@ -42,3 +42,13 @@ videoPktQueue pushing speed will influence audioPktQueue pushing process.
 ---
 #### Thread is dead at some place, not going to play video or audio ?
 have no idea, deadlock ?
+
+---
+#### How to play video and audio synchronously and smoothly ?
+If we calculate the difference of audio clock and video clock, then decide how much time
+the display thread should sleep. It's rough idea, will cause the picture rendering lag,
+because rendering may sleep too much time when time cumulating. we must reduce the sleep
+time.
+
+---
+#### 
