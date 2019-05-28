@@ -16,6 +16,7 @@ extern "C" {
 #include "libavformat/avformat.h"
 #include "libswresample/swresample.h"
 #include "libavutil/time.h"
+#include "libavutil/opt.h"
 }
 #pragma comment(lib, "avformat.lib")
 #pragma comment(lib, "avutil.lib")
@@ -23,7 +24,6 @@ extern "C" {
 
 std::size_t audio_callback_count = 0;
 using frame_type = AVFrame *;
-std::ofstream ofs("output.dat", std::ofstream::binary);
 
 void audio_callback(void *opaque, uint8_t* stream, int len)
 {
@@ -35,24 +35,27 @@ void audio_callback(void *opaque, uint8_t* stream, int len)
   {
     frame = queue->Pop();
     len1 = frame->linesize[0];
-    ofs.write((char*)frame->data[0], len1);
 
     if (len1 > len) {
       len1 = len;
-      std::cout << "last len: " << len1 << std::endl;
+      //std::cout << "last len: " << len1 << std::endl;
     }
 
-    memcpy(stream, frame->data, len1);
+    memcpy(stream, frame->data[0], len1);
 
     len -= len1;
     stream += len1;
 
-    if (frame) av_frame_free(&frame);
+    if (frame) {
+      av_freep(&frame->data[0]);
+      av_frame_free(&frame);
+    }
   }
-  // std::cout << CurrentTimeStr() << " | " << ++audio_callback_count << std::endl;
+
+  //std::cout << CurrentTimeStr() << " | " << ++audio_callback_count << std::endl;
 }
 
-SDL_AudioDeviceID deviceId = -1;
+SDL_AudioDeviceID deviceId = 0;
 
 bool OpenAudioAndPlay(int sampleRate, int channels, int format, int samples,
                void (*callback)(void*, uint8_t*, int), void* opaque)
@@ -96,6 +99,8 @@ int main(int argc, char* argv[])
   AVCodec *codec = nullptr;
   int audioStreamIdx = -1;
   Queue<frame_type> queue;
+  double speed = std::atof(argv[1]);
+  std::cout << "speed: " << speed << std::endl;
 
   if ((ret_code = avformat_open_input(&avFormatCtx, filename, nullptr, nullptr)) != 0) {
     char error_msg_buf[256] = {0};
@@ -113,7 +118,7 @@ int main(int argc, char* argv[])
   int sampleRate = audioCodecPar->sample_rate;
   int channels = audioCodecPar->channels;
   int format = audioCodecPar->format;
-  int layout = audioCodecPar->channel_layout;
+  int64_t layout = audioCodecPar->channel_layout;
 
   AVCodecContext *avCodecCtx = avcodec_alloc_context3(codec);
   avcodec_parameters_to_context(avCodecCtx, audioCodecPar);
@@ -121,22 +126,22 @@ int main(int argc, char* argv[])
   ret_code = avcodec_open2(avCodecCtx, codec, nullptr);
   if (ret_code < 0) exit(EXIT_FAILURE);
 
-  av_dump_format(avFormatCtx, 0, filename, 0);
+  //av_dump_format(avFormatCtx, 0, filename, 0);
 
-  // int dstSampleRate = static_cast<int>(sampleRate / 2.0);
-  // SwrContext *swr = swr_alloc_set_opts(nullptr,
-  //                           AV_CH_LAYOUT_STEREO, (AVSampleFormat)AV_SAMPLE_FMT_S16, dstSampleRate,
-  //                           layout, (AVSampleFormat)format, sampleRate,
-  //                           0, nullptr);
-  // swr_init(swr);
+  SwrContext *swr = swr_alloc_set_opts(nullptr,
+                            AV_CH_LAYOUT_STEREO, (AVSampleFormat)AV_SAMPLE_FMT_S16, int(sampleRate / speed),
+                            layout, (AVSampleFormat)format, sampleRate,
+                            0, nullptr);
+  av_opt_set_int(swr, "ich", channels, 0); // input channels count
+  av_opt_set_int(swr, "och", channels, 0); // output channels count
+  swr_init(swr);
 
   AVPacket pkt;
   av_init_packet(&pkt);
   pkt.data = nullptr;
   pkt.size = 0;
-
-  OpenAudioAndPlay(sampleRate, channels, AUDIO_S16SYS, 1024, audio_callback, &queue);
-
+  int64_t total_bytes = 0;
+  int nb_samples_per_frame = 0;
 
   while (true) {
     ret_code = av_read_frame(avFormatCtx, &pkt);
@@ -149,14 +154,33 @@ int main(int argc, char* argv[])
       AVFrame *frame = av_frame_alloc();
       ret_code = avcodec_receive_frame(avCodecCtx, frame);
       if (ret_code == 0) {
-        queue.Push(frame);
-      } else {
+
+        if (deviceId < 2) {
+          nb_samples_per_frame = int(frame->nb_samples / speed);
+          OpenAudioAndPlay(sampleRate, channels, AUDIO_S16SYS, nb_samples_per_frame, audio_callback, &queue);
+        }
+
+        AVFrame *outFrame = av_frame_alloc();
+        outFrame->channel_layout = layout;
+        outFrame->format = format;
+        outFrame->nb_samples = int(frame->nb_samples / speed);
+        av_samples_alloc(outFrame->data, outFrame->linesize, channels, nb_samples_per_frame, (AVSampleFormat)format, 0);
+        swr_convert(swr, outFrame->data, nb_samples_per_frame,
+          (const uint8_t **)frame->data, frame->nb_samples);
+
+        queue.Push(outFrame);
+        total_bytes += frame->linesize[0];
         av_frame_free(&frame);
+
+      } else {
         break;
       }
     }
-  } // av_read_frame()
+  }
 
+  std::cout << "total bytes: " << total_bytes << std::endl;
+
+  swr_free(&swr);
   SDL_CloseAudio();
   SDL_Quit();
 
