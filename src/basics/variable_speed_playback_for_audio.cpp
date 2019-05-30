@@ -89,12 +89,13 @@ int main(int argc, char* argv[])
   int sampleRate = 48000;
   int channels = 2;
   int samples = 1024;
-  double speed = 0.5;
+  double speed = 1.0;
 
   soundtouch::SoundTouch soundTouch;
   soundTouch.setChannels(channels);
   soundTouch.setRate(speed);
   soundTouch.setSampleRate(sampleRate);
+  soundTouch.setPitch(1.0);
   
   Queue<frame_type> queue(max_queue_size);
   const char filename[] = "test_s16le.pcm";

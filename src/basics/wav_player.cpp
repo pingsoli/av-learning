@@ -1,7 +1,7 @@
 // use SDL2 to play .wav file
 
 // How to calculate the duration of wav file?
-// time = file size / ( sample rate * channels * bits per sample / 8)
+// time = (file size - 46) / ( sample rate * channels * bits per sample / 8)
 
 #include <iostream>
 #include <fstream>
