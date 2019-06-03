@@ -6,9 +6,13 @@ the project directory hierarchy
 |   |-- win32
 |   |-- win64
 |-- include
-|   |-- ffmpeg
-|   |-- sdl2
-|   |-- ...
+|   |-- ffmpeg       Encode, decode, filter library for audio and video
+|   |-- sdl2         Audio playing and picture rendering library
+|   |-- glfw         GLFW and GLAD for OpenGL library
+|   |-- glm          OpenGL Mathematics library(header-only)
+|   |-- stab         Graphics library(header-only)
+|   |-- libyuv       Pixel format conversion, YUV to RGB or YUV411 to YUV420
+|   |-- soundtouch   Audio library for audio pitch, tempo and rete.
 |-- lib
 |   |-- ffmpeg
 |   |   |-- win32
