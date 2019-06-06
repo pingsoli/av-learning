@@ -1,3 +1,6 @@
+// What is texture ?
+// it stores a large collection of data to send to the shader.
+
 #include "utils.h"
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -91,7 +94,7 @@ int main(int argc, char* argv[])
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
   // setting the texture filtering parameters
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
   int tWidth, tHeight, nrChannels;
@@ -116,11 +119,7 @@ int main(int argc, char* argv[])
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    // Bind texture
-    glBindTexture(GL_TEXTURE_2D, texture);
-
     glUseProgram(shaderProgram);
-    glBindVertexArray(VAO);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); // 6 indices, not 4
 
     glfwSwapBuffers(window);

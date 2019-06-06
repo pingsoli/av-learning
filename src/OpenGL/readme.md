@@ -1,5 +1,11 @@
 ### OpenGL
 
+---
+### todo list
+1. what is vulkan ? next generation of OpenGL ??? what does that mean ?
+2. blender - 3d modeling software ? write a demo
+
+---
 **the outline of pipeline processing**
 ```
 Vertex Data[] -> Vertex Shader -> Shape Assembly -> Geometry Shader ---+
@@ -9,10 +15,18 @@ Vertex Data[] -> Vertex Shader -> Shape Assembly -> Geometry Shader ---+
 Basically, we can only control Vertex Data, Vertex Shader, Geometry Shader and Fragment Shader.
 ```
 
+---
+#### Shader
 **What is shader ?**  
 Shader is little program rests on CPU can be executed parallelly.
 Shaders are written in C-like language GLSL(OpenGL Shading Language).
 there are various types of shader, such as vertex shader and fragment shader.
+
+**GLSL**  
+GLSL full name is OpenGL Shading Language. It's kind of C-like language.
+
+**GLSL ES and GLSL**  
+GLSL ES(for Embeded Systems) is variant of GLSL of Desktop.  
 
 ---
 #### GLFW and GLAD

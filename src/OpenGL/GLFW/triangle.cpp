@@ -1,3 +1,8 @@
+// create a triangle
+// 1. start to learn GLSL(OpenGl Shading Language)
+// 2. the coordinate of triangle construction
+//    use buffer and element buffer
+
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
@@ -85,15 +90,15 @@ int main(int argc, char *argv[])
   glDeleteShader(fragmentShader);
 
   //////////////////////////////////////////////////////////////////////////////////
-  // draw triangle to setup vertex data
-  // 2D coordinate of all vertices(ignoring the z axis)
-  //        y ^
-  //          |
-  //          *
-  //        / | \
-  // ---------0-----------> x
-  //     /    |    \
-  //    * ----|---- *
+  // // draw triangle to setup vertex data
+  // // 2D coordinate of all vertices(ignoring the z axis)
+  // //        y ^
+  // //          |
+  // //          *
+  // //        / | \
+  // // ---------0-----------> x
+  // //     /    |    \
+  // //    * ----|---- *
   // float vertices[] = {
   //   -0.5f, -0.5f, 0.0f, // left
   //    0.5f, -0.5f, 0.0f, // right
@@ -156,7 +161,7 @@ int main(int argc, char *argv[])
   glBindVertexArray(0);
 
   // uncomment this call to draw in wireframe polygons.
-  glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+  // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
   while (!glfwWindowShouldClose(window)) {
     processInput(window);

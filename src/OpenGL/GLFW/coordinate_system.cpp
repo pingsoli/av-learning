@@ -172,7 +172,7 @@ int main(int argc, char* argv[])
 
     glUseProgram(shaderProgram);
 
-    // glm::mat4 model = glm::mat4(1.0f);
+    glm::mat4 model = glm::mat4(1.0f);
     glm::mat4 view = glm::mat4(1.0f);
     glm::mat4 projection = glm::mat4(1.0f);
 
@@ -180,6 +180,8 @@ int main(int argc, char* argv[])
     // model = glm::rotate(model, (float) glfwGetTime() * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
     // view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
     view = glm::translate(view, glm::vec3(pos_x, pos_y, -3.0f));
+
+    // below code has same function
     // projection = glm::perspective(glm::radians(45.0f), (float) width/(float) height, 0.1f, 100.0f);
     projection = glm::perspectiveFov(glm::radians(fov), (float)width, (float)height, 0.1f, 50.0f);
 

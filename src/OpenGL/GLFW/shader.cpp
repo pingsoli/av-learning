@@ -66,7 +66,7 @@ int main(int argc, char* argv[])
   glDeleteShader(vertexShader);
   glDeleteShader(fragmentShader);
 
-  // only position
+  // position only
   // float vertices[] = {
   //   -0.5f, -0.5f, 0.0f, // left
   //    0.5f, -0.5f, 0.0f, // right

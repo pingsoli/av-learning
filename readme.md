@@ -11,7 +11,7 @@ the project directory hierarchy
 |   |-- glfw         GLFW and GLAD for OpenGL library
 |   |-- glm          OpenGL Mathematics library(header-only)
 |   |-- stab         Graphics library(header-only)
-|   |-- libyuv       Pixel format conversion, YUV to RGB or YUV411 to YUV420
+|   |-- libyuv       YUV scaling and conversion
 |   |-- soundtouch   Audio library for audio pitch, tempo and rete.
 |-- lib
 |   |-- ffmpeg

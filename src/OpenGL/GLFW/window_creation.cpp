@@ -1,3 +1,6 @@
+// first tutorial for creating a window with dark green color
+// get familiar with window event and basic process
+
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
@@ -39,16 +42,18 @@ int main(int argc, char *argv[])
     return -2;
   }
 
+  // callback will be invoked when window size changing
   glViewport(0, 0, width, height);
   glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
   // Render loop until pressing exit button
   while (!glfwWindowShouldClose(window)) {
-    // input
+    // input, deal with mouse or keyboard events.
     processInput(window);
 
     // render
-    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+    // glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+    // glClearColor(1.0f, 1.0f, 1.0f, 1.0f); // white color
     glClear(GL_COLOR_BUFFER_BIT);
 
     glfwSwapBuffers(window);

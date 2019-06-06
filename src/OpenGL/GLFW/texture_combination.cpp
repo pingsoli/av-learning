@@ -24,7 +24,7 @@ const char *vertexShaderSource =
   "  TexCoord = aTexCoord;\n"
   "}\n";
 
-// linearly interpolate between both textures (80% container, 20% awesomeface)
+// linearly interpolate between both textures (80% container, 20%)
 const char *fragmentShaderSource =
   "#version 440 core\n"
   "out vec4 FragColor;\n"
